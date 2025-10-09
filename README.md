@@ -13,17 +13,17 @@ O sistema realiza operações de **CRUD (Create, Read, Update, Delete)** e simul
 ## 🧩 Questões do Trabalho
 
 ### a) Qual a estrutura usada para representar os registros?
-
+Os registros foram representados em arquivos binários, seguindo um formato fixo para cada campo. Cada tabela possui um arquivo .db contendo os registros serializados. Cada registro inclui um cabeçalho com informações de controle, como o número total de registros e o último ID utilizado.
 
 ---
 
 ### b) Como atributos multivalorados do tipo string foram tratados?
-
+Os atributos multivalorados do tipo string foram armazenados como strings separadas por delimitadores de quantidade de caracteres da string.
 
 ---
 
 ### c) Como foi implementada a exclusão lógica?
-utilização do campo de lápide para exclusão e verificação de o registro ainda existe no sistema ou não
+A exclusão lógica foi implementada como um valor booleano onde “ “ significa que o registro está ativo e “*” quando o registro está excluído.
 
 ---
 
@@ -44,12 +44,23 @@ utilização do campo de lápide para exclusão e verificação de o registro ai
 ---
 
 ### g) Como os índices são persistidos em disco? (formato, atualização, sincronização com os dados)
-
+Cada índice é armazenado em arquivos binários separados, mantendo sincronização automática a cada operação de inserção, atualização ou exclusão.
 
 ---
 
 ### h)  Como está estruturado o projeto no GitHub (pastas, módulos, arquitetura)?
 📂 CalculaFast
-┣ 📂 java/
+┣ 📂 src/
+  ┣ 📂 java/
+    ┣ 📂 app/
+      📝Principal
+    ┣ 📂 dados/
+      arquivos.db
+    ┣ 📂 dao/
+      arquivos tipo dao
+    ┣ 📂 menu/
+      menu de navegação
+    ┣ 📂 model/
+      classes das entidades
 
 
