@@ -1,3 +1,9 @@
+package app;
+import menu.MenuComanda;
+import menu.MenuItem;
+import menu.MenuPagamento;
+import menu.MenuPessoa_Comanda_Item;
+import menu.MenuPessoas;
 import java.util.Scanner;
 
 public class Principal {
@@ -62,3 +68,4 @@ public class Principal {
         }
     }
 }
+
