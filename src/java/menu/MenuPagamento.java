@@ -2,11 +2,9 @@ package menu;
 import model.Pagamento;
 import dao.PagamentoDAO;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
-class MenuPagamento{
+public class MenuPagamento{
      private PagamentoDAO pagamentoDAO;
     private Scanner console = new Scanner(System.in);
 

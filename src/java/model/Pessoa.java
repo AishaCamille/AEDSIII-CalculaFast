@@ -101,7 +101,7 @@ public class Pessoa implements Registro{
 	 */
 	@Override
 	public String toString() {
-		return "\nID: "+ email+
+		return "\nID: "+ id +
 				"\nNome: " + nome +
 				"\nEmail:" + email;
 	}

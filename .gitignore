@@ -1,0 +1,20 @@
+# Build outputs
+out/
+bin/
+target/
+build/
+
+# Runtime data files
+dados/
+src/java/dados/
+**/*.db
+
+# Logs
+*.log
+
+# OS/IDE files
+.DS_Store
+.idea/
+.vscode/
+
+

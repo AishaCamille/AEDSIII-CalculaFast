@@ -94,13 +94,10 @@ public class Item implements Registro{
     // toString para exibir o item como String
     @Override
     public String toString() {
-        return "Item{" +
-                "id=" + id +
-                ", descricao='" + descricao + '\'' +
-                ", valor=" + valor +
-            
-                '}';
+        return "\nID: " + id +
+               "\nDescrição: " + descricao +
+               String.format("\nValor: %.2f", valor) +
+               "\nQuantidade: " + quantidade;
     }
 
-    
 }

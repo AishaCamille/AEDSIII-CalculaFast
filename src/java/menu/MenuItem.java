@@ -54,8 +54,9 @@ public class MenuItem {
 
     private void buscarItem() {
         System.out.print("\nID do item: ");
-        int id = console.nextInt();
-        console.nextLine();
+        String idStr = console.nextLine().trim();
+        int id;
+        try { id = Integer.parseInt(idStr); } catch (NumberFormatException e) { System.out.println("ID inválido."); return; }
         try {
             Item item = itemDAO.buscarItem(id);
             if (item != null) {
@@ -71,14 +72,16 @@ public class MenuItem {
     private void incluirItem() {
         System.out.println("\nInclusão de item");
 
-        System.out.print("\nnome do item: ");
+        System.out.print("\nNome do item: ");
         String descricao = console.nextLine();
-        System.out.print("valor: ");
-        double valor = console.nextInt();
-        console.nextLine();
+        System.out.print("Valor: ");
+        String valorStr = console.nextLine().trim();
+        double valor;
+        try { valor = Double.parseDouble(valorStr); } catch (NumberFormatException e) { System.out.println("Valor inválido."); return; }
         System.out.print("Quantidade: ");
-        int quantidade = console.nextInt();
-        console.nextLine();
+        String qtdStr = console.nextLine().trim();
+        int quantidade;
+        try { quantidade = Integer.parseInt(qtdStr); } catch (NumberFormatException e) { System.out.println("Quantidade inválida."); return; }
         try {
             Item item = new Item(descricao, valor, quantidade);
             if (itemDAO.incluirItem(item)) {
@@ -93,8 +96,9 @@ public class MenuItem {
 
     private void alterarItem() {
         System.out.print("\nID do item a ser alterado: ");
-        int id = console.nextInt();
-        console.nextLine();
+        String idStr = console.nextLine().trim();
+        int id;
+        try { id = Integer.parseInt(idStr); } catch (NumberFormatException e) { System.out.println("ID inválido."); return; }
 
         try {
             Item item = itemDAO.buscarItem(id);
@@ -103,18 +107,21 @@ public class MenuItem {
                 return;
             }
 
-            System.out.print("\nNovo descricao (vazio para manter): ");
+            System.out.print("\nNova descrição (vazio para manter): ");
             String descricao = console.nextLine();
             if (!descricao.isEmpty()) item.setDescricao(descricao);
 
             System.out.print("Novo valor (vazio para manter): ");
-            String valor = console.nextLine();
-            console.nextLine();
-            if (!valor.isEmpty()) item.setValor(Double.parseDouble(valor));
+            String valor = console.nextLine().trim();
+            if (!valor.isEmpty()) {
+                try { item.setValor(Double.parseDouble(valor)); } catch (NumberFormatException ignored) {}
+            }
 
             System.out.print("Nova quantidade (vazio para manter): ");
-            String quantidadeStr = console.nextLine();
-            if (!quantidadeStr.isEmpty()) item.setQuantidade(Integer.parseInt(quantidadeStr));
+            String quantidadeStr = console.nextLine().trim();
+            if (!quantidadeStr.isEmpty()) {
+                try { item.setQuantidade(Integer.parseInt(quantidadeStr)); } catch (NumberFormatException ignored) {}
+            }
 
             
             if (itemDAO.alterarItem(item)) {
@@ -129,8 +136,9 @@ public class MenuItem {
 
     private void excluirItem() {
         System.out.print("\nID do item a ser excluído: ");
-        int id = console.nextInt();
-        console.nextLine();
+        String idStr = console.nextLine().trim();
+        int id;
+        try { id = Integer.parseInt(idStr); } catch (NumberFormatException e) { System.out.println("ID inválido."); return; }
 
         try {
             Item item = itemDAO.buscarItem(id);

@@ -2,7 +2,6 @@ package menu;
 import model.Pessoa;
 import dao.PessoaDAO;
 
-import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
 public class MenuPessoas {
@@ -73,21 +72,25 @@ public class MenuPessoas {
     private void incluirPessoa() {
         System.out.println("\nInclusão de pessoa");
 
-        System.out.print("\nID: ");
-        int id = console.nextInt();
-        System.out.print("\nNome: ");
+        System.out.print("\nID (positivo para definir, 0 para auto): ");
+        String idStr = console.nextLine().trim();
+        int id = 0;
+        if (!idStr.isEmpty()) {
+            try { id = Integer.parseInt(idStr); } catch (NumberFormatException ignored) { id = 0; }
+        }
+
+        System.out.print("Nome: ");
         String nome = console.nextLine();
         System.out.print("email: ");
         String email = console.nextLine();
-        System.out.print("\nsenha: ");
+        System.out.print("senha: ");
         String senha = console.nextLine();
-        //console.nextLine();
         try {
-            Pessoa pessoa = new Pessoa(id, nome, email, senha);
+            Pessoa pessoa = (id > 0) ? new Pessoa(id, nome, email, senha) : new Pessoa(nome, email, senha);
             if (pessoaDAO.incluirPessoa(pessoa)) {
                 System.out.println("Pessoa incluído com sucesso.");
             } else {
-                System.out.println("Erro ao incluir pessoa.");
+                System.out.println("Erro ao incluir pessoa. (Possível ID duplicado)");
             }
         } catch (Exception e) {
             System.out.println("Erro ao incluir pessoa.");
@@ -95,9 +98,14 @@ public class MenuPessoas {
     }
 
     private void alterarPessoa() {
-        System.out.print("\nemail do pessoa a ser alterado: ");
-        int id = console.nextInt();
-        console.nextLine();
+        System.out.print("\nID da pessoa a ser alterada: ");
+        String idStr = console.nextLine().trim();
+        int id = 0;
+        try { id = Integer.parseInt(idStr); } catch (NumberFormatException e) { id = -1; }
+        if (id <= 0) {
+            System.out.println("ID inválido.");
+            return;
+        }
 
         try {
             Pessoa pessoa = pessoaDAO.buscarPessoa(id);

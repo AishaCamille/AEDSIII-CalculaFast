@@ -4,7 +4,7 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.Constructor;
 
 public class Arquivo<T extends Registro> {
-    private static final int TAM_CABECALHO = 4;
+    private static final int TAM_CABECALHO = 12; // 4 bytes (último ID) + 8 bytes (ponteiro lista de excluídos)
     private RandomAccessFile arquivo;
     private String nomeArquivo;
     private Constructor<T> construtor;
@@ -27,10 +27,26 @@ public class Arquivo<T extends Registro> {
     }
 
     public int create(T obj) throws Exception {
+        // Descobre último ID registrado no cabeçalho
         arquivo.seek(0);
-        int novoID = arquivo.readInt() + 1;
+        int ultimoId = arquivo.readInt();
+
+        int idSolicitado = obj.getId();
+        int novoID = (idSolicitado > 0) ? idSolicitado : (ultimoId + 1);
+
+        if (idSolicitado > 0) {
+            T existente = read(idSolicitado);
+            if (existente != null) {
+                return -1; // ID já existe
+            }
+        }
+
+        // Atualiza o cabeçalho com o maior ID conhecido
+        int novoUltimoId = Math.max(ultimoId, novoID);
         arquivo.seek(0);
-        arquivo.writeInt(novoID);
+        arquivo.writeInt(novoUltimoId);
+
+        // Persiste o registro
         obj.setId(novoID);
         byte[] dados = obj.toByteArray();
 
