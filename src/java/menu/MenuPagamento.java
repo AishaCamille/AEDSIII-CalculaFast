@@ -22,6 +22,7 @@ public class MenuPagamento{
             System.out.println("2 - Incluir");
             System.out.println("3 - Alterar");
             System.out.println("4 - Excluir");
+            System.out.println("5 - Listar por Comanda (1:N)");
             System.out.println("0 - Voltar");
 
             System.out.print("\nOpção: ");
@@ -43,6 +44,9 @@ public class MenuPagamento{
                     break;
                 case 4:
                     excluirPagamento();
+                    break;
+                case 5:
+                    listarPorComanda();
                     break;
                 case 0:
                     break;
@@ -159,6 +163,22 @@ public class MenuPagamento{
             }
         } catch (Exception e) {
             System.out.println("Erro ao excluir pagamento.");
+        }
+    }
+
+    private void listarPorComanda() {
+        System.out.print("\nID da comanda: ");
+        int id = console.nextInt();
+        console.nextLine();
+        try {
+            java.util.List<Integer> ids = pagamentoDAO.listarPorComanda(id);
+            if (ids.isEmpty()) {
+                System.out.println("Sem pagamentos para a comanda " + id);
+            } else {
+                System.out.println("Pagamentos da comanda " + id + ": " + ids);
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao listar por comanda.");
         }
     }
 }

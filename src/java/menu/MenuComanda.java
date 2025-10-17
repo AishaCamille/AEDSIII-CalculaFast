@@ -21,6 +21,7 @@ public class MenuComanda {
             System.out.println("2 - Incluir");
             System.out.println("3 - Alterar");
             System.out.println("4 - Excluir");
+            System.out.println("5 - Listar por Pessoa (1:N)");
             System.out.println("0 - Voltar");
 
             System.out.print("\nOpção: ");
@@ -42,6 +43,9 @@ public class MenuComanda {
                     break;
                 case 4:
                     excluirComanda();
+                    break;
+                case 5:
+                    listarPorPessoa();
                     break;
                 case 0:
                     break;
@@ -165,6 +169,23 @@ public class MenuComanda {
             }
         } catch (Exception e) {
             System.out.println("Erro ao excluir comanda.");
+        }
+    }
+
+    private void listarPorPessoa() {
+        System.out.print("\nID da pessoa: ");
+        String idStr = console.nextLine().trim();
+        int idPessoa;
+        try { idPessoa = Integer.parseInt(idStr); } catch (NumberFormatException e) { System.out.println("ID inválido."); return; }
+        try {
+            java.util.List<Integer> ids = comandaDAO.listarPorPessoa(idPessoa);
+            if (ids.isEmpty()) {
+                System.out.println("Sem comandas para a pessoa " + idPessoa);
+            } else {
+                System.out.println("Comandas da pessoa " + idPessoa + ": " + ids);
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao listar por pessoa.");
         }
     }
 }

@@ -21,7 +21,7 @@ public class Principal {
                 System.out.println("\n3 - Item");
                 System.out.println("\n4 - Pessoa_comanda_item");
                 System.out.println("\n5 - Pagameneto");
-                System.out.println("0 - Sair");
+                System.out.println("\n0 - Sair");
 
                 System.out.print("\nOpção: ");
                 try {
