@@ -5,6 +5,7 @@ import menu.MenuPagamento;
 import menu.MenuPessoa_Comanda_Item;
 import menu.MenuPessoas;
 import java.util.Scanner;
+import menu.MenuConsultas;
 
 public class Principal {
     public static void main(String[] args) {
@@ -21,6 +22,7 @@ public class Principal {
                 System.out.println("\n3 - Item");
                 System.out.println("\n4 - Pessoa_comanda_item");
                 System.out.println("\n5 - Pagameneto");
+                System.out.println("\n6 - Consultas bidirecionais");//da relação n:n
                 System.out.println("\n0 - Sair");
 
                 System.out.print("\nOpção: ");
@@ -50,6 +52,10 @@ public class Principal {
                     case 5:
                         MenuPagamento menuPagamento = new MenuPagamento();
                         menuPagamento.menu();
+                        break;
+                    case 6:
+                        MenuConsultas menuConsultas = new MenuConsultas();    
+                        menuConsultas.menu();
                         break;
                     case 0:
                         System.out.println("Saindo...");

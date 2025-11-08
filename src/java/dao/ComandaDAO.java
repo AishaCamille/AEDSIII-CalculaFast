@@ -2,9 +2,13 @@ package dao;
 
 import model.Arquivo;
 import model.Comanda;
+import model.Pessoa_Comanda_Item;
 import index.hash.HashExtensivel;
 import index.hash.ParChaveHead;
 import index.inverted.InvertedList;
+
+import java.util.List;
+
 import index.bptree.BPlusTree;
 
 public class ComandaDAO {
@@ -12,11 +16,13 @@ public class ComandaDAO {
     private HashExtensivel<ParChaveHead> idxPessoaHead; // pessoaId -> head lista
     private InvertedList listaPessoaComandas; // nós da lista invertida
     private BPlusTree bptPessoa; // ordenação por idPessoa
+    private Pessoa_Comanda_ItemDAO pciDAO; //para tabela intermediaria e relacionamento n:n
 
     public ComandaDAO() throws Exception {
         arqComandas = new Arquivo<>("comandas", Comanda.class.getConstructor());
         initIndices("./dados/comandas/comandas");
         rebuildIndices();
+        pciDAO = new Pessoa_Comanda_ItemDAO();
     }
 
     public ComandaDAO(Arquivo<Comanda> arqComandas) throws Exception {
@@ -150,4 +156,31 @@ public class ComandaDAO {
         }
         return out;
     }
+
+    //busca todos os itens de uma comanda
+     public List<Integer> getItensDaComanda(int idComanda) throws Exception {
+        List<Integer> itens = new java.util.ArrayList<>();
+        List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorComanda(idComanda);
+        
+        for (Pessoa_Comanda_Item relacao : relacoes) {
+            if (!itens.contains(relacao.getIdItem())) {
+                itens.add(relacao.getIdItem());
+            }
+        }
+        return itens;
+    }
+
+    //busca todas as pessoas de uma comanda
+     public List<Integer> getPessoasDaComanda(int idComanda) throws Exception {
+        List<Integer> pessoas = new java.util.ArrayList<>();
+        List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorComanda(idComanda);
+        
+        for (Pessoa_Comanda_Item relacao : relacoes) {
+            if (!pessoas.contains(relacao.getIdPessoa())) {
+                pessoas.add(relacao.getIdPessoa());
+            }
+        }
+        return pessoas;
+    }
 }
+

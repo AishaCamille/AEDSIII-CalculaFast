@@ -1,7 +1,8 @@
 package menu;
 import dao.Pessoa_Comanda_ItemDAO;
-import java.util.Scanner;
+import java.util.*;
 import model.Pessoa_Comanda_Item;
+
 
 public class MenuPessoa_Comanda_Item {
     private Pessoa_Comanda_ItemDAO pessoa_comanda_itemDAO;
@@ -19,6 +20,9 @@ public class MenuPessoa_Comanda_Item {
             System.out.println("2 - Incluir");
             System.out.println("3 - Alterar");
             System.out.println("4 - Excluir");
+            System.out.println("5 - Consultar Itens de uma Pessoa");     
+            System.out.println("6 - Consultar Pessoas de um Item");      
+            System.out.println("7 - Consultar Itens de uma Comanda");
             System.out.println("0 - Voltar");
 
             System.out.print("\nOpção: ");
@@ -40,6 +44,15 @@ public class MenuPessoa_Comanda_Item {
                     break;
                 case 4:
                     excluirPessoa_Comanda_Item();
+                    break;
+                  case 5: 
+                    consultarItensDaPessoa();
+                    break;
+                case 6: 
+                    consultarPessoasDoItem();
+                    break;
+                case 7: 
+                    consultarItensDaComanda();
                     break;
                 case 0:
                     break;
@@ -204,6 +217,74 @@ public class MenuPessoa_Comanda_Item {
             pessoa_comanda_itemDAO.fechar();
         } catch (Exception e) {
             System.out.println("Erro ao fechar DAO: " + e.getMessage());
+        }
+    }
+
+
+    //consultas de pessoa, item e comandas
+      private void consultarItensDaPessoa() {
+        System.out.print("\nID da Pessoa: ");
+        int idPessoa = console.nextInt();
+        console.nextLine();
+        
+        try {
+            List<Pessoa_Comanda_Item> relacoes = pessoa_comanda_itemDAO.buscarPorPessoa(idPessoa);
+            if (relacoes.isEmpty()) {
+                System.out.println("Nenhum item encontrado para esta pessoa.");
+            } else {
+                System.out.println("\n=== Itens da Pessoa " + idPessoa + " ===");
+                for (Pessoa_Comanda_Item relacao : relacoes) {
+                    System.out.println(relacao);
+                    System.out.println("---");
+                }
+                System.out.println("Total: " + relacoes.size() + " relação(ões)");
+            }
+        } catch (Exception e) {
+            System.out.println("Erro: " + e.getMessage());
+        }
+    }
+
+    private void consultarPessoasDoItem() {
+        System.out.print("\nID do Item: ");
+        int idItem = console.nextInt();
+        console.nextLine();
+        
+        try {
+            List<Pessoa_Comanda_Item> relacoes = pessoa_comanda_itemDAO.buscarPorItem(idItem);
+            if (relacoes.isEmpty()) {
+                System.out.println("Nenhuma pessoa encontrada para este item.");
+            } else {
+                System.out.println("\n=== Pessoas que compraram o Item " + idItem + " ===");
+                for (Pessoa_Comanda_Item relacao : relacoes) {
+                    System.out.println(relacao);
+                    System.out.println("---");
+                }
+                System.out.println("Total: " + relacoes.size() + " relação(ões)");
+            }
+        } catch (Exception e) {
+            System.out.println("Erro: " + e.getMessage());
+        }
+    }
+
+    private void consultarItensDaComanda() {
+        System.out.print("\nID da Comanda: ");
+        int idComanda = console.nextInt();
+        console.nextLine();
+        
+        try {
+            List<Pessoa_Comanda_Item> relacoes = pessoa_comanda_itemDAO.buscarPorComanda(idComanda);
+            if (relacoes.isEmpty()) {
+                System.out.println("Nenhum item encontrado para esta comanda.");
+            } else {
+                System.out.println("\n=== Itens da Comanda " + idComanda + " ===");
+                for (Pessoa_Comanda_Item relacao : relacoes) {
+                    System.out.println(relacao);
+                    System.out.println("---");
+                }
+                System.out.println("Total: " + relacoes.size() + " relação(ões)");
+            }
+        } catch (Exception e) {
+            System.out.println("Erro: " + e.getMessage());
         }
     }
 }

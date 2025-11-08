@@ -1,6 +1,10 @@
 package dao;
 import model.Arquivo;
 import model.Pessoa;
+import model.Pessoa_Comanda_Item;
+
+import java.util.List;
+
 import index.hash.HashExtensivel;
 import index.hash.ParIdOffset;
 
@@ -8,6 +12,7 @@ public class PessoaDAO  {
 
        private Arquivo<Pessoa> arqPessoas;
        private HashExtensivel<ParIdOffset> idxPk;
+       private Pessoa_Comanda_ItemDAO pciDAO;
 
     public PessoaDAO() throws Exception {
         arqPessoas = new Arquivo<>("pessoas", Pessoa.class.getConstructor());
@@ -16,6 +21,7 @@ public class PessoaDAO  {
         idxPk = new HashExtensivel<>(ParIdOffset.class.getConstructor(), 8,
                 base + ".pkhash_d.db", base + ".pkhash_b.db");
         rebuildIndexIfNeeded();
+        pciDAO = new Pessoa_Comanda_ItemDAO();
     }
 
     public PessoaDAO(Arquivo<Pessoa> arqPessoas) throws Exception {
@@ -69,5 +75,15 @@ public class PessoaDAO  {
         if (ok) idxPk.delete(Math.abs(id));
         return ok;
     }
+
+    //p tabelas intermediarias
+    //busca todos os itens que uma pessoa ja comprou
+      public List<Integer> getItensCompradosPorPessoa(int idPessoa) throws Exception {
+        return pciDAO.buscarItensUnicosPorPessoa(idPessoa);
+    }
     
+    //mostra todas as relações de uma pessoa
+     public List<Pessoa_Comanda_Item> getRelacoesDaPessoa(int idPessoa) throws Exception {
+        return pciDAO.buscarPorPessoa(idPessoa);
+    }
 }
