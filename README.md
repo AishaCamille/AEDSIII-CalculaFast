@@ -18,7 +18,7 @@ Os registros foram representados em arquivos binários, seguindo um formato fixo
 ### h)  Como está estruturado o projeto no GitHub (pastas, módulos, arquitetura)?
 
 ```html
-<pre>
+
 📁 src/
 ├── 📁 java/
 │   ├── 📁 model/
@@ -53,4 +53,4 @@ Os registros foram representados em arquivos binários, seguindo um formato fixo
     ├── indice_chave_composta_dir.db 
     ├── indice_chave_composta_buckets.db 
     └── ...
-</pre>
+
