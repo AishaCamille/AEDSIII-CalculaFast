@@ -1,11 +1,10 @@
 package menu;
-import model.Pagamento;
 import dao.PagamentoDAO;
-
 import java.util.Scanner;
+import model.Pagamento;
 
-public class MenuPagamento{
-     private PagamentoDAO pagamentoDAO;
+public class MenuPagamento {
+    private PagamentoDAO pagamentoDAO;
     private Scanner console = new Scanner(System.in);
 
     public MenuPagamento() throws Exception {
@@ -23,6 +22,7 @@ public class MenuPagamento{
             System.out.println("3 - Alterar");
             System.out.println("4 - Excluir");
             System.out.println("5 - Listar por Comanda (1:N)");
+            System.out.println("6 - Buscar por Intervalo de Valor"); // NOVO
             System.out.println("0 - Voltar");
 
             System.out.print("\nOpção: ");
@@ -47,6 +47,9 @@ public class MenuPagamento{
                     break;
                 case 5:
                     listarPorComanda();
+                    break;
+                case 6:
+                    buscarPorIntervaloValor(); // NOVO
                     break;
                 case 0:
                     break;
@@ -115,21 +118,24 @@ public class MenuPagamento{
             
             System.out.print("Novo valor pago (vazio para manter): ");
             String valorPagoStr = console.nextLine();
-            if (!valorPagoStr.isEmpty()) pagamento.setValorPago(Double.parseDouble(valorPagoStr));
+            if (!valorPagoStr.isEmpty()) 
+                pagamento.setValorPago(Double.parseDouble(valorPagoStr));
 
             System.out.print("Novo valor com desconto (vazio para manter): ");
             String valorComDescontoStr = console.nextLine();
-            if (!valorComDescontoStr.isEmpty()) pagamento.setValorComDesconto(Double.parseDouble(valorComDescontoStr));
+            if (!valorComDescontoStr.isEmpty()) 
+                pagamento.setValorComDesconto(Double.parseDouble(valorComDescontoStr));
 
-             System.out.print("Novo id de pessoa (vazio para manter): ");
+            System.out.print("Novo id de pessoa (vazio para manter): ");
             String idPessoaStr = console.nextLine();
-            if (!idPessoaStr.isEmpty()) pagamento.setIdPessoa(Integer.parseInt(idPessoaStr));
+            if (!idPessoaStr.isEmpty()) 
+                pagamento.setIdPessoa(Integer.parseInt(idPessoaStr));
 
-              System.out.print("Novo id de comanda (vazio para manter): ");
+            System.out.print("Novo id de comanda (vazio para manter): ");
             String idComandaStr = console.nextLine();
-            if (!idComandaStr.isEmpty()) pagamento.setIdComanda(Integer.parseInt(idComandaStr));
+            if (!idComandaStr.isEmpty()) 
+                pagamento.setIdComanda(Integer.parseInt(idComandaStr));
 
-            
             if (pagamentoDAO.alterarPagamento(pagamento)) {
                 System.out.println("Pagamento alterado com sucesso.");
             } else {
@@ -137,6 +143,7 @@ public class MenuPagamento{
             }
         } catch (Exception e) {
             System.out.println("Erro ao alterar pagamento.");
+            e.printStackTrace();
         }
     }
 
@@ -154,6 +161,8 @@ public class MenuPagamento{
 
             System.out.print("Confirma exclusão? (S/N): ");
             char resp = console.next().charAt(0);
+            console.nextLine();
+            
             if (resp == 'S' || resp == 's') {
                 if (pagamentoDAO.excluirPagamento(id)) {
                     System.out.println("Pagamento excluído com sucesso.");
@@ -175,10 +184,54 @@ public class MenuPagamento{
             if (ids.isEmpty()) {
                 System.out.println("Sem pagamentos para a comanda " + id);
             } else {
-                System.out.println("Pagamentos da comanda " + id + ": " + ids);
+                System.out.println("\nPagamentos da comanda " + id + ":");
+                System.out.println("Total: " + ids.size() + " pagamento(s)");
+                System.out.println("IDs: " + ids);
+                
+                // Mostra detalhes de cada pagamento
+                System.out.println("\nDetalhes:");
+                for (int pagId : ids) {
+                    Pagamento p = pagamentoDAO.buscarPagamento(pagId);
+                    if (p != null) {
+                        System.out.println("  - " + p);
+                    }
+                }
             }
         } catch (Exception e) {
             System.out.println("Erro ao listar por comanda.");
+            e.printStackTrace();
+        }
+    }
+
+    // NOVO MÉTODO: Busca por intervalo de valores usando B+ Tree
+    private void buscarPorIntervaloValor() {
+        System.out.println("\nBuscar pagamentos por intervalo de valor");
+        
+        System.out.print("Valor mínimo: R$ ");
+        double valorMin = console.nextDouble();
+        console.nextLine();
+        
+        System.out.print("Valor máximo: R$ ");
+        double valorMax = console.nextDouble();
+        console.nextLine();
+        
+        try {
+            java.util.List<Pagamento> pagamentos = pagamentoDAO.buscarPorIntervaloValor(valorMin, valorMax);
+            
+            if (pagamentos.isEmpty()) {
+                System.out.println("\nNenhum pagamento encontrado no intervalo R$ " 
+                    + String.format("%.2f", valorMin) + " - R$ " 
+                    + String.format("%.2f", valorMax));
+            } else {
+                System.out.println("\nPagamentos encontrados: " + pagamentos.size());
+                System.out.println("\nDetalhes:");
+                for (Pagamento p : pagamentos) {
+                    System.out.println("  - " + p);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao buscar por intervalo de valor.");
+            e.printStackTrace();
         }
     }
 }

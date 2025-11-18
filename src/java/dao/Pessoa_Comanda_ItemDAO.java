@@ -1,9 +1,8 @@
 package dao;
 
+import index.hash.IndiceChaveComposta;
 import java.util.ArrayList;
 import java.util.List;
-
-import index.hash.IndiceChaveComposta;
 import model.Arquivo;
 import model.Pessoa_Comanda_Item;
 
@@ -34,7 +33,7 @@ public class Pessoa_Comanda_ItemDAO {
         return false;
     }
 
-    // BUSCA PRINCIPAL - por chave composta
+    // por chave composta
     public Pessoa_Comanda_Item buscarPorChaveComposta(int idPessoa, int idComanda, int idItem) throws Exception {
         var chave = indiceChave.buscar(idPessoa, idComanda, idItem);
         return (chave != null) ? buscarPorOffset(chave.getOffset()) : null;

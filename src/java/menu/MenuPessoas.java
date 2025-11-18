@@ -1,8 +1,7 @@
 package menu;
-import model.Pessoa;
 import dao.PessoaDAO;
-
 import java.util.Scanner;
+import model.Pessoa;
 
 public class MenuPessoas {
     private PessoaDAO pessoaDAO;
@@ -72,7 +71,7 @@ public class MenuPessoas {
     private void incluirPessoa() {
         System.out.println("\nInclusão de pessoa");
 
-        System.out.print("\nID (positivo para definir, 0 para auto): ");
+        System.out.print("\nID (id>0 para definir id, 0 para id automático): ");
         String idStr = console.nextLine().trim();
         int id = 0;
         if (!idStr.isEmpty()) {

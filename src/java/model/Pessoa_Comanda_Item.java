@@ -52,7 +52,7 @@ public class Pessoa_Comanda_Item implements Registro {
     @Override
     public void setId(int id) {
         // Não faz nada - o "ID" é derivado da chave composta
-        // Este método é necessário pela interface mas não usamos
+        // Este método é necessário pela interface 
     }
 
     // Gera hash da chave composta

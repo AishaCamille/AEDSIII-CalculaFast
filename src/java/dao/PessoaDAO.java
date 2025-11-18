@@ -1,12 +1,10 @@
 package dao;
+import index.hash.HashExtensivel;
+import index.hash.ParIdOffset;
+import java.util.List;
 import model.Arquivo;
 import model.Pessoa;
 import model.Pessoa_Comanda_Item;
-
-import java.util.List;
-
-import index.hash.HashExtensivel;
-import index.hash.ParIdOffset;
 
 public class PessoaDAO  {
 
@@ -40,7 +38,7 @@ public class PessoaDAO  {
                 if (!idxPk.update(new ParIdOffset(p.getId(), pos))) {
                     try { idxPk.create(new ParIdOffset(p.getId(), pos)); } catch (Exception ignore) {}
                 }
-            } catch (Exception e) { /* ignora */ }
+            } catch (Exception e) { }
         });
     }
 

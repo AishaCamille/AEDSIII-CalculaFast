@@ -1,21 +1,18 @@
 package dao;
 
-import model.Arquivo;
-import model.Comanda;
-import model.Pessoa_Comanda_Item;
 import index.hash.HashExtensivel;
 import index.hash.ParChaveHead;
 import index.inverted.InvertedList;
-
 import java.util.List;
-
-import index.bptree.BPlusTree;
+import model.Arquivo;
+import model.Comanda;
+import model.Pessoa_Comanda_Item;
 
 public class ComandaDAO {
     private Arquivo<Comanda> arqComandas;
     private HashExtensivel<ParChaveHead> idxPessoaHead; // pessoaId -> head lista
     private InvertedList listaPessoaComandas; // nós da lista invertida
-    private BPlusTree bptPessoa; // ordenação por idPessoa
+   // private BPlusTree bptPessoa; // ordenação por idPessoa
     private Pessoa_Comanda_ItemDAO pciDAO; //para tabela intermediaria e relacionamento n:n
 
     public ComandaDAO() throws Exception {
@@ -36,7 +33,7 @@ public class ComandaDAO {
         idxPessoaHead = new HashExtensivel<>(ParChaveHead.class.getConstructor(), 8,
                 base + ".pessoa_head_d.db", base + ".pessoa_head_b.db");
         listaPessoaComandas = new InvertedList(base + ".pessoa_list.db");
-        bptPessoa = new BPlusTree(base + ".pessoa_bpt.db");
+       // bptPessoa = new BPlusTree(base + ".pessoa_bpt.db");
     }
 
     private void rebuildIndices() throws Exception {
@@ -56,7 +53,7 @@ public class ComandaDAO {
                     ph.setHead(novoHead);
                     idxPessoaHead.update(ph);
                 }
-                bptPessoa.put(pessoaId, novoHead);
+              //  bptPessoa.put(pessoaId, novoHead);
             } catch (Exception e) {
                 /* ignora */ }
         });
@@ -80,7 +77,7 @@ public class ComandaDAO {
             ph.setHead(novoHead);
             idxPessoaHead.update(ph);
         }
-        bptPessoa.put(pessoaId, novoHead);
+      //  bptPessoa.put(pessoaId, novoHead);
         return true;
     }
 
@@ -112,7 +109,7 @@ public class ComandaDAO {
             long novo = listaPessoaComandas.prepend(comanda.getId(), newHead);
             if (phNew == null) idxPessoaHead.create(new ParChaveHead(newPid, novo));
             else { phNew.setHead(novo); idxPessoaHead.update(phNew); }
-            bptPessoa.put(newPid, novo);
+          //  bptPessoa.put(newPid, novo);
         }
         return true;
     }

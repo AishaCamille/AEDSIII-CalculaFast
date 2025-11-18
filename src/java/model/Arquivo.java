@@ -106,7 +106,7 @@ public class Arquivo<T extends Registro> {
     }
 
     public T read(int id) throws Exception {
-        System.out.println("\n>>> Buscando ID: " + id);
+        //System.out.println("\n>>> Buscando ID: " + id);
         arquivo.seek(TAM_CABECALHO);
         int tentativas = 0;
         while (arquivo.getFilePointer() < arquivo.length()) {
@@ -115,15 +115,15 @@ public class Arquivo<T extends Registro> {
             short tamanho = arquivo.readShort();
             byte[] dados = new byte[tamanho];
             arquivo.read(dados);
-            System.out.println("Tentativa " + tentativas + " - Posição: " + posicao +
-                    " | Lápide: " + lapide + " | Tamanho: " + tamanho);
+           // System.out.println("Tentativa " + tentativas + " - Posição: " + posicao +
+          //          " | Lápide: " + lapide + " | Tamanho: " + tamanho);
 
             if (lapide == ' ') {
                 T obj = construtor.newInstance();
                 obj.fromByteArray(dados);
-                System.out.println("  -> ID encontrado: " + obj.getId());
+               // System.out.println("  -> ID encontrado: " + obj.getId());
                 if (obj.getId() == id) {
-                    System.out.println("  -> MATCH! Retornando objeto");
+                    //System.out.println("  -> MATCH! Retornando objeto");
                     return obj;
                 }
             }
@@ -340,6 +340,7 @@ public class Arquivo<T extends Registro> {
         obj.fromByteArray(dados);
         return obj;
     }
+
 
     public long firstRecordPosition() {
         return TAM_CABECALHO;
