@@ -79,7 +79,7 @@ public void setPciDAO(Pessoa_Comanda_ItemDAO pciDAO) {
                 List<Pessoa_Comanda_Item> todasRelacoes = pciDAO.buscarTodos();
                 for (Pessoa_Comanda_Item pci : todasRelacoes) {
                     int comandaId = pci.getIdComanda();
-                    int pessoaId = pci.getIdPessoa();
+                    int pessoaId = pci.getIdPessoaComanda();
                     
                     if (!pessoaJaNaComanda(comandaId, pessoaId)) {
                         ParChaveHead cph = idxComandaPessoaHead.read(Math.abs(comandaId));
@@ -95,13 +95,12 @@ public void setPciDAO(Pessoa_Comanda_ItemDAO pciDAO) {
                     }
                 }
             } catch (Exception e) {
-                // Se buscarTodos falhar, ignora (pode não ter dados ainda)
+                // Se buscarTodos falhar, ignora 
                 System.out.println("Aviso: Não foi possível reconstruir relacionamentos: " + e.getMessage());
             }
         }
     }
 
-    // Método auxiliar para verificar se pessoa já está na lista da comanda
     private boolean pessoaJaNaComanda(int comandaId, int pessoaId) throws Exception {
         ParChaveHead cph = idxComandaPessoaHead.read(Math.abs(comandaId));
         if (cph == null) return false;
@@ -223,7 +222,7 @@ public void setPciDAO(Pessoa_Comanda_ItemDAO pciDAO) {
         java.util.HashSet<Integer> comandasVerificadas = new java.util.HashSet<>();
         
         // Usa Pessoa_Comanda_Item para encontrar todas as comandas onde a pessoa aparece
-        List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorPessoa(pessoaId);
+        List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorPessoaComanda(pessoaId);
         
         for (Pessoa_Comanda_Item pci : relacoes) {
             int comandaId = pci.getIdComanda();
@@ -276,8 +275,8 @@ public void setPciDAO(Pessoa_Comanda_ItemDAO pciDAO) {
         // Se não tem índice, tenta buscar de Pessoa_Comanda_Item
         List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorComanda(comandaId);
         for (Pessoa_Comanda_Item pci : relacoes) {
-            if (pessoasAdicionadas.add(pci.getIdPessoa())) {
-                out.add(pci.getIdPessoa());
+            if (pessoasAdicionadas.add(pci.getIdPessoaComanda())) {
+                out.add(pci.getIdPessoaComanda());
             }
         }
         return out;
@@ -375,7 +374,7 @@ public void setPciDAO(Pessoa_Comanda_ItemDAO pciDAO) {
         HashSet<Integer> pessoasUnicas = new HashSet<>();
         
         for (Pessoa_Comanda_Item pci : relacoes) {
-            pessoasUnicas.add(pci.getIdPessoa());
+            pessoasUnicas.add(pci.getIdPessoaComanda());
         }
         
         // Adiciona cada pessoa única à lista

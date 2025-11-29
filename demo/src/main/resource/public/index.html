@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Paytone+One&display=swap" rel="stylesheet">
+    <link rel = "icon" href ="./assets/logo.png" type = "image/x-icon"> 
+    <link rel="stylesheet" href="index.css">
+
+   
+    
+    <script>
+	
+		function abrirNovaComanda() {
+		//função que abre a proxima pagina
+			window.location.href = "pessoas.html";  
+		}
+
+
+		  function compartilharNoWhatsApp() {
+			//função que compartilha o link da aplicação apra outras pessoas atraves do whatsapp
+		    const link = window.location.href; // Pega o link da página atual
+		    const mensagem = `Utilize este link para ter acesso ao CalculaFast. Um aplicação desenvolvida para otimizar a diversão com a galera! ${link}`;
+		    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensagem)}`;
+
+		    window.open(url, '_blank'); // Abre o WhatsApp Web ou App numa nova aba
+		  }
+
+
+
+		document.addEventListener('DOMContentLoaded', function() {//executa o codigo depois que o html estiver todo carregado
+			//logica que faz o menu ficar lateral no tamanho mobile
+		    let menuOpen = false;//para saber se o manu está aberto ou nao
+		    const menuMobileMain = document.querySelector('.menu-mobile-main');//seleciona elementos do html
+		    const asideElement = document.querySelector('aside');
+
+		    menuMobileMain.addEventListener('click', function() {
+		        if (menuOpen) {
+		            asideElement.style.transform = 'translateX(-228px)';
+		            menuMobileMain.style.filter = 'invert(98%) sepia(83%) saturate(6956%) hue-rotate(354deg) brightness(105%) contrast(105%)';
+		        } else {
+		            asideElement.style.transform = 'translateX(0px)';
+		            menuMobileMain.style.filter = 'invert(0%) sepia(7%) saturate(7473%) hue-rotate(158deg) brightness(104%) contrast(96%)';
+		        }
+		        menuOpen = !menuOpen;
+		    });
+		});
+
+    </script>
+
+   <title>CalculaFast</title>
+</head>
+
+<body>
+    <main>
+        <aside>
+            <nav class="navegacao">
+                <div class="logobreja">
+                    <img src="./assets/logo.png">
+                </div>
+                <ul>
+                    <li>
+                        <a>
+                            <button onclick="location.reload()">Inicio</button>
+                        </a>
+                    </li>
+                    <li>
+                        
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+        <img class="menu-mobile-main" src="./assets/cardapio.png" alt="">
+        <div class="conteudo">
+            <h1>
+                <img class="imglogo" src="./assets/outraOUTRa.png">
+            </h1>
+            <div class="mesa">
+                <button onclick="abrirNovaComanda()">Abrir Nova Comanda</button>
+            <button onclick="compartilharNoWhatsApp()" style="background-color: #1ba14d; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+				  📲 Convidar Amigos
+				</button>
+                <div class="cervejamesa">
+                    <img src="./assets/cerveja-removebg-preview.png">
+                </div>
+            </div>
+        </div> 
+    </main>
+</body>
+
+</html>
+

@@ -1,6 +1,6 @@
 package com.calculafast.menu;
 
-import com.calculafast.dao.PessoaDAO;
+import com.calculafast.dao.PessoaComandaDAO;
 import com.calculafast.dao.ItemDAO;
 import com.calculafast.dao.ComandaDAO;
 import com.calculafast.dao.Pessoa_Comanda_ItemDAO;
@@ -9,13 +9,13 @@ import java.util.Scanner;
 
 public class MenuConsultas {
     private Scanner console = new Scanner(System.in);
-    private PessoaDAO pessoaDAO;
+    private PessoaComandaDAO pessoaDAO;
     private ItemDAO itemDAO;
     private ComandaDAO comandaDAO;
     private Pessoa_Comanda_ItemDAO pciDAO;
 
     public MenuConsultas() throws Exception {
-        pessoaDAO = new PessoaDAO();
+        pessoaDAO = new PessoaComandaDAO();
         itemDAO = new ItemDAO();
         comandaDAO = new ComandaDAO();
         pciDAO = new Pessoa_Comanda_ItemDAO();
@@ -58,7 +58,7 @@ public class MenuConsultas {
         console.nextLine();
         
         try {
-            List<Integer> itens = pessoaDAO.getItensCompradosPorPessoa(idPessoa);
+            List<Integer> itens = pessoaDAO.getItensCompradosPorPessoaComanda(idPessoa);
             System.out.println("\nItens comprados pela pessoa " + idPessoa + ":");
             for (Integer idItem : itens) {
                 System.out.println(" - Item ID: " + idItem);

@@ -228,7 +228,7 @@ public class MenuPessoa_Comanda_Item {
         console.nextLine();
         
         try {
-            List<Pessoa_Comanda_Item> relacoes = pessoa_comanda_itemDAO.buscarPorPessoa(idPessoa);
+            List<Pessoa_Comanda_Item> relacoes = pessoa_comanda_itemDAO.buscarPorPessoaComanda(idPessoa);
             if (relacoes.isEmpty()) {
                 System.out.println("Nenhum item encontrado para esta pessoa.");
             } else {

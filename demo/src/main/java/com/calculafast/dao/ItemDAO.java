@@ -49,8 +49,8 @@ public class ItemDAO  {
        List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorItem(idItem);
         
         for (Pessoa_Comanda_Item relacao : relacoes) {
-            if (!pessoas.contains(relacao.getIdPessoa())) {
-                pessoas.add(relacao.getIdPessoa());
+            if (!pessoas.contains(relacao.getIdPessoaComanda())) {
+                pessoas.add(relacao.getIdPessoaComanda());
             }
         }
         return pessoas;

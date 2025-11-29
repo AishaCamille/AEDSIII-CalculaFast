@@ -1,4 +1,4 @@
-package com.calculafast.app;
+/*package com.calculafast.app;
 import com.calculafast.dao.PessoaDAO;
 import com.calculafast.model.Pessoa;
 
@@ -13,6 +13,9 @@ import com.calculafast.model.Pagamento;
 
 import com.calculafast.dao.Pessoa_Comanda_ItemDAO;
 import com.calculafast.model.Pessoa_Comanda_Item;
+
+import com.calculafast.dao.PessoaComandaDAO;
+import com.calculafast.model.PessoaComanda;
 
 import com.google.gson.Gson;
 
@@ -176,7 +179,7 @@ put("/pessoa-comanda-item/:idPessoa/:idComanda/:idItem", (req, res) -> {
     int idItem = Integer.parseInt(req.params("idItem"));
     
     Pessoa_Comanda_Item pci = gson.fromJson(req.body(), Pessoa_Comanda_Item.class);
-    pci.setIdPessoa(idPessoa);
+    pci.setIdPessoaComanda(idPessoa);
     pci.setIdComanda(idComanda);
     pci.setIdItem(idItem);
 
@@ -207,7 +210,7 @@ get("/pessoa-comanda-item", (req, res) -> {
 // Buscar por pessoa
 get("/pessoa-comanda-item/pessoa/:idPessoa", (req, res) -> {
     int idPessoa = Integer.parseInt(req.params("idPessoa"));
-    List<Pessoa_Comanda_Item> resultados = pciDAO.buscarPorPessoa(idPessoa);
+    List<Pessoa_Comanda_Item> resultados = pciDAO.buscarPorPessoaComanda(idPessoa);
     return gson.toJson(resultados);
 });
 
@@ -227,3 +230,4 @@ get("/pessoa-comanda-item/item/:idItem", (req, res) -> {
 
     }
 }
+*/

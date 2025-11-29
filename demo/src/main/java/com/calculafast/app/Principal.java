@@ -1,11 +1,13 @@
-/*package app;
+package com.calculafast.app;
 import java.util.Scanner;
-import menu.MenuComanda;
-import menu.MenuConsultas;
-import menu.MenuItem;
-import menu.MenuPagamento;
-import menu.MenuPessoa_Comanda_Item;
-import menu.MenuPessoas;
+import com.calculafast.menu.MenuComanda;
+import com.calculafast.menu.MenuConsultas;
+import com.calculafast.menu.MenuItem;
+import com.calculafast.menu.MenuPagamento;
+import com.calculafast.menu.MenuPessoa_Comanda_Item;
+import com.calculafast.menu.MenuPessoas;
+import com.calculafast.menu.MenuPessoaComanda;
+
 
 
 public class Principal {
@@ -19,12 +21,13 @@ public class Principal {
                 System.out.println("\n\nAEDsIII");
                 System.out.println("-------");
                 System.out.println("> Início");
-                System.out.println("\n1 - Clientes");
+                System.out.println("\n1 - Pessoas");
                 System.out.println("\n2 - Comanda");
                 System.out.println("\n3 - Item");
                 System.out.println("\n4 - Pessoa_comanda_item");
                 System.out.println("\n5 - Pagamento");
-                System.out.println("\n6 - Consultas bidirecionais");//da relação n:n
+                System.out.println("\n6 - Pessoas na Comanda");
+                System.out.println("\n7 - Consultas bidirecionais");//da relação n:n
                 System.out.println("\n0 - Sair");
 
                 System.out.print("\nOpção: ");
@@ -56,6 +59,10 @@ public class Principal {
                         menuPagamento.menu();
                         break;
                     case 6:
+                        MenuPessoaComanda menuPessoaComanda = new MenuPessoaComanda();
+                        menuPessoaComanda.menu();
+                        break;  
+                    case 7:
                         MenuConsultas menuConsultas = new MenuConsultas();    
                         menuConsultas.menu();
                         break;
@@ -75,5 +82,5 @@ public class Principal {
             console.close();
         }
     }
-}*/
+}
 

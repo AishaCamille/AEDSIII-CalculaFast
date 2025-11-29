@@ -1,0 +1,159 @@
+*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+body {
+
+    opacity: 1;
+    background-image:  url("./assets/texturamesa2.jpg");
+
+}
+main { 
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+}
+aside {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 20px;
+    z-index: 5;
+}
+.menu-mobile-main{
+    cursor: pointer;
+    display: none;
+    filter: invert(98%) sepia(83%) saturate(6956%) hue-rotate(354deg) brightness(105%) contrast(105%);
+    left: 0px;
+    width: 50px;
+    position: absolute;
+    top: 0px;
+    transition: filter 0.1s;
+}
+.menu-mobile:hover{
+    filter: none;
+}  
+.navegacao ul {
+    display: flex;
+    flex-direction: column;
+    height: max-content;
+    gap: 15px;
+    list-style: none;
+    margin-top: 100px;
+}
+.navegacao ul li {
+    cursor: pointer;
+}
+.navegacao ul li:hover {
+    color: #5f5f5f;
+}
+.navegacao button {
+    color: black;
+    background-color: #ffffff;
+    border: none;
+    padding: 10px 0px;
+    font-family:'Georgia', 'Times New Roman', Times, serif;
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.5sec;
+}
+.navegacao button:hover{
+    background: black;
+    color: #ffffff;
+
+}
+.conteudo {
+    display: flex;
+    flex-direction: column;
+    align-items:start;
+    gap: 50px;
+    
+    
+}
+.conteudo h1 {
+    color: rgb(255, 255, 255);
+    -webkit-text-stroke: 2px black;
+    font-family:"Paytone One";
+    font-size: 50px;
+    background-color: black;
+    padding: 10px;
+    border-radius: 40px;
+    margin-left: 20px;
+	
+    
+}
+.mesa {
+    width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 400px;
+    justify-content: center;
+    gap: 20px;
+    border-radius: 200px;
+    box-shadow: 00px 00px 80px 20px ;
+    position: relative;
+    
+    
+}
+.mesa button{
+    background-color: black;
+    color: rgb(255, 255, 255);
+    cursor: pointer;
+    border: none;
+    padding: 15px 50px;
+    font-size: 16px;
+    font-family: "Paytone One";
+    border-radius: 8px;
+    transition: color 0.5s;
+}
+.mesa button:hover{
+    background: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
+}
+.navegacao {
+    font-family:inherit ;
+    font-size: 44px;
+    height: 100%;
+    position: relative;
+    
+}
+.logobreja {
+    display: flex;
+}
+.cervejamesa {
+    right: 50%;
+    top: -60px;
+    position: absolute;
+}
+.cervejamesa img {
+    width: 200px;
+}
+
+@media (max-width: 1200px) {
+    aside {
+        transform: translateX(-228px);
+        transition: transform 0.9s;
+        z-index: 2;
+    }
+    .menu-mobile-main{
+        display: block;
+        z-index: 9;
+    }
+}
+li {
+    color: rgb(255, 255, 255);
+}
+.conteudo .imglogo{
+	width: 429px;
+	height:102px;
+	object-fit:contain;
+}

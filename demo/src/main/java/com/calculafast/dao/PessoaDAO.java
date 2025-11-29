@@ -7,13 +7,11 @@ import com.calculafast.index.hash.HashExtensivel;
 import com.calculafast.index.hash.ParIdOffset;
 import com.calculafast.model.Arquivo;
 import com.calculafast.model.Pessoa;
-import com.calculafast.model.Pessoa_Comanda_Item;
 
 public class PessoaDAO {
 
     private Arquivo<Pessoa> arqPessoas;
     private HashExtensivel<ParIdOffset> idxPk;
-    private Pessoa_Comanda_ItemDAO pciDAO;
     
     public PessoaDAO() throws Exception {
         this.arqPessoas = new Arquivo<>("pessoas", Pessoa.class.getConstructor());
@@ -25,31 +23,29 @@ public class PessoaDAO {
                 "./dados/pessoas/pessoas.pkhash_b.db"
         );
         
-        this.pciDAO = new Pessoa_Comanda_ItemDAO();
-        
         rebuildIndex();
     }
 
-  private void rebuildIndex() throws Exception {
-    final int[] contadores = {0, 0};
-    
-    arqPessoas.scanValidRecords((pos, obj) -> {
-        try {
-            Pessoa p = (Pessoa) obj;
-            boolean success = idxPk.create(new ParIdOffset(p.getId(), pos));
-            if (!success) {
-                success = idxPk.update(new ParIdOffset(p.getId(), pos));
-            }
-            if (success) {
-                contadores[0]++;
-            } else {
+    private void rebuildIndex() throws Exception {
+        final int[] contadores = {0, 0};
+        
+        arqPessoas.scanValidRecords((pos, obj) -> {
+            try {
+                Pessoa p = (Pessoa) obj;
+                boolean success = idxPk.create(new ParIdOffset(p.getId(), pos));
+                if (!success) {
+                    success = idxPk.update(new ParIdOffset(p.getId(), pos));
+                }
+                if (success) {
+                    contadores[0]++;
+                } else {
+                    contadores[1]++;
+                }
+            } catch (Exception e) {
                 contadores[1]++;
             }
-        } catch (Exception e) {
-            contadores[1]++;
-        }
-    });
-}
+        });
+    }
 
     public Pessoa buscarPessoa(int id) throws Exception {
         try {
@@ -101,12 +97,7 @@ public class PessoaDAO {
     }
 
     public boolean excluirPessoa(int id) throws Exception {
-        List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorPessoa(id);
-        if (!relacoes.isEmpty()) {
-            throw new Exception("Não é possível excluir pessoa. Existem " + relacoes.size() + 
-                              " registro(s) relacionados em Pessoa_Comanda_Item.");
-        } 
-        
+     /////!!!!!!!verificar se  a comanda ta aberta antes de excluir
         boolean ok = arqPessoas.delete(id);
         if (ok) {
             idxPk.delete(id);
@@ -114,26 +105,18 @@ public class PessoaDAO {
         return ok;
     }
 
-     public List<Integer> getItensCompradosPorPessoa(int idPessoa) throws Exception {
-        return pciDAO.buscarItensUnicosPorPessoa(idPessoa);
-    }
-    
-    public List<Pessoa_Comanda_Item> getRelacoesDaPessoa(int idPessoa) throws Exception {
-        return pciDAO.buscarPorPessoa(idPessoa);
+    public List<Pessoa> listarPessoas() throws Exception {
+        List<Pessoa> listaPessoas = new ArrayList<>();
+        
+        arqPessoas.scanValidRecords((pos, obj) -> {
+            Pessoa p = (Pessoa) obj;
+            listaPessoas.add(p);
+        });
+        
+        return listaPessoas;
     }
     
     public void fechar() throws Exception {
         arqPessoas.close();
-        pciDAO.fechar();
     }
-    public List<Pessoa> listarPessoas() throws Exception {
-    List<Pessoa> listaPessoas = new ArrayList<>();
-    
-    arqPessoas.scanValidRecords((pos, obj) -> {
-        Pessoa p = (Pessoa) obj;
-        listaPessoas.add(p);
-    });
-    
-    return listaPessoas;
-}
 }

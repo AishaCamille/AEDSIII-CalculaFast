@@ -7,15 +7,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class Pessoa_Comanda_Item implements Registro {
-    private int idPessoa;
+    private int idPessoaComanda;
     private int idComanda;
     private int idItem;
     private int quantidade;
     private double valorUnitario;
     private static final int TAMANHO_REGISTRO = 24;
 
-    public Pessoa_Comanda_Item(int idPessoa, int idComanda, int idItem, int quantidade, double valorUnitario) {
-        this.idPessoa = idPessoa;
+    public Pessoa_Comanda_Item(int idPessoaComanda, int idComanda, int idItem, int quantidade, double valorUnitario) {
+        this.idPessoaComanda = idPessoaComanda;
         this.idComanda = idComanda;
         this.idItem = idItem;
         this.quantidade = quantidade;
@@ -27,8 +27,8 @@ public class Pessoa_Comanda_Item implements Registro {
     }
 
     // Getters e Setters
-    public int getIdPessoa() { return idPessoa; }
-    public void setIdPessoa(int idPessoa) { this.idPessoa = idPessoa; }
+    public int getIdPessoaComanda() { return idPessoaComanda; }
+    public void setIdPessoaComanda(int idPessoaComanda) { this.idPessoaComanda = idPessoaComanda; }
 
     public int getIdComanda() { return idComanda; }
     public void setIdComanda(int idComanda) { this.idComanda = idComanda; }
@@ -42,22 +42,19 @@ public class Pessoa_Comanda_Item implements Registro {
     public double getValorUnitario() { return valorUnitario; }
     public void setValorUnitario(double valorUnitario) { this.valorUnitario = valorUnitario; }
 
-    // IMPLEMENTAÇÃO DOS MÉTODOS DA INTERFACE REGISTRO
-    // Usamos o hash da chave composta como "ID" para a interface
-    @Override
+     @Override
     public int getId() {
         return getChaveComposta();
     }
 
     @Override
     public void setId(int id) {
-        // Não faz nada - o "ID" é derivado da chave composta
         // Este método é necessário pela interface 
     }
 
     // Gera hash da chave composta
     public int getChaveComposta() {
-        return Math.abs((idPessoa * 31) + (idComanda * 17) + (idItem * 7));
+        return Math.abs((idPessoaComanda * 31) + (idComanda * 17) + (idItem * 7));
     }
 
     public int size() {
@@ -68,7 +65,7 @@ public class Pessoa_Comanda_Item implements Registro {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         
-        dos.writeInt(this.idPessoa);
+        dos.writeInt(this.idPessoaComanda);
         dos.writeInt(this.idComanda);
         dos.writeInt(this.idItem);
         dos.writeInt(this.quantidade);
@@ -81,7 +78,7 @@ public class Pessoa_Comanda_Item implements Registro {
         ByteArrayInputStream bais = new ByteArrayInputStream(b);
         DataInputStream dis = new DataInputStream(bais);
         
-        this.idPessoa = dis.readInt();
+        this.idPessoaComanda = dis.readInt();
         this.idComanda = dis.readInt();
         this.idItem = dis.readInt();
         this.quantidade = dis.readInt();
@@ -90,7 +87,7 @@ public class Pessoa_Comanda_Item implements Registro {
 
     @Override
     public String toString() {
-           return "\nID Pessoa.........: " + this.idPessoa +
+           return "\nID PessoaComanda.........: " + this.idPessoaComanda +
                "\nID Comanda........: " + this.idComanda +
                "\nID Item...........: " + this.idItem +
                "\nQuantidade........: " + this.quantidade +
@@ -108,7 +105,7 @@ public class Pessoa_Comanda_Item implements Registro {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         Pessoa_Comanda_Item that = (Pessoa_Comanda_Item) obj;
-        return idPessoa == that.idPessoa && 
+        return idPessoaComanda == that.idPessoaComanda && 
                idComanda == that.idComanda && 
                idItem == that.idItem;
     }

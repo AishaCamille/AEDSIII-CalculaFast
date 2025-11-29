@@ -8,23 +8,23 @@ import com.calculafast.index.hash.IndiceChaveComposta;
 import com.calculafast.model.Arquivo;
 import com.calculafast.model.Comanda;
 import com.calculafast.model.Item;
-import com.calculafast.model.Pessoa;
+import com.calculafast.model.PessoaComanda;
 import com.calculafast.model.Pessoa_Comanda_Item;
 import com.calculafast.model.Registro;
-
 
 public class Pessoa_Comanda_ItemDAO {
 
     private Arquivo<Pessoa_Comanda_Item> arqPessoa_Comanda_Item;
     private IndiceChaveComposta indiceChave;
     
-    private Arquivo<Pessoa> arqPessoa;
+    private Arquivo<PessoaComanda> arqPessoaComanda;
     private Arquivo<Comanda> arqComanda;
     private Arquivo<Item> arqItem;
     private ComandaDAO comandaDAO;
+    
     public void setComandaDAO(ComandaDAO comandaDAO) {
-    this.comandaDAO = comandaDAO;
-}
+        this.comandaDAO = comandaDAO;
+    }
 
     public Pessoa_Comanda_ItemDAO() throws Exception {
         File pastaIndices = new File("./indices");
@@ -35,15 +35,17 @@ public class Pessoa_Comanda_ItemDAO {
         arqPessoa_Comanda_Item = new Arquivo<>("Pessoa_Comanda_Item", Pessoa_Comanda_Item.class.getConstructor());
         indiceChave = new IndiceChaveComposta("dados/indice_chave_composta");
       
-       this.arqPessoa = new Arquivo<>("Pessoa", Pessoa.class.getConstructor());
+        this.arqPessoaComanda = new Arquivo<>("PessoaComanda", PessoaComanda.class.getConstructor());
         this.arqComanda = new Arquivo<>("Comanda", Comanda.class.getConstructor());
         this.arqItem = new Arquivo<>("Item", Item.class.getConstructor());
     }
 
     public boolean incluirPessoa_Comanda_Item(Pessoa_Comanda_Item pci) throws Exception {
-        boolean sucesso=false;
-        if (arqPessoa.read(pci.getIdPessoa()) == null) {
-            throw new Exception("Erro de Integridade: Pessoa com ID " + pci.getIdPessoa() + " não existe.");
+        boolean sucesso = false;
+        
+        // Verifica integridade referencial
+        if (arqPessoaComanda.read(pci.getIdPessoaComanda()) == null) {
+            throw new Exception("Erro de Integridade: PessoaComanda com ID " + pci.getIdPessoaComanda() + " não existe.");
         }
         
         if (arqComanda.read(pci.getIdComanda()) == null) {
@@ -53,7 +55,8 @@ public class Pessoa_Comanda_ItemDAO {
         if (arqItem.read(pci.getIdItem()) == null) {
             throw new Exception("Erro de Integridade: Item com ID " + pci.getIdItem() + " não existe.");
         }
-        Pessoa_Comanda_Item existente = buscarPorChaveComposta(pci.getIdPessoa(), pci.getIdComanda(), pci.getIdItem());
+        
+        Pessoa_Comanda_Item existente = buscarPorChaveComposta(pci.getIdPessoaComanda(), pci.getIdComanda(), pci.getIdItem());
         
         if (existente != null) {
             throw new Exception("Já existe registro com esta chave composta!");
@@ -66,14 +69,14 @@ public class Pessoa_Comanda_ItemDAO {
             Pessoa_Comanda_Item registroArquivo = arqPessoa_Comanda_Item.read(idHash);
             
             if (registroArquivo != null && 
-                registroArquivo.getIdPessoa() == pci.getIdPessoa() && 
+                registroArquivo.getIdPessoaComanda() == pci.getIdPessoaComanda() && 
                 registroArquivo.getIdComanda() == pci.getIdComanda() && 
                 registroArquivo.getIdItem() == pci.getIdItem()) {
                 
                 offset = encontrarOffsetNoArquivo(registroArquivo);
                 
                 if (offset >= 0) {
-                    indiceChave.inserir(registroArquivo.getIdPessoa(), registroArquivo.getIdComanda(), 
+                    indiceChave.inserir(registroArquivo.getIdPessoaComanda(), registroArquivo.getIdComanda(), 
                                        registroArquivo.getIdItem(), offset);
                     return true;
                 } else {
@@ -84,20 +87,33 @@ public class Pessoa_Comanda_ItemDAO {
             }
         }
         
-        // Insere no índice de chave composta
-        indiceChave.inserir(pci.getIdPessoa(), pci.getIdComanda(), pci.getIdItem(), offset);
+        indiceChave.inserir(pci.getIdPessoaComanda(), pci.getIdComanda(), pci.getIdItem(), offset);
         
         System.out.println("Inserção concluída com sucesso.");
-        sucesso=true;
+        sucesso = true;
+        
         if (sucesso && comandaDAO != null) {
-        // Sincroniza a lista invertida
-        comandaDAO.adicionarPessoaAComanda(pci.getIdComanda(), pci.getIdPessoa());
-    }
+            try {
+                java.lang.reflect.Method m = comandaDAO.getClass().getMethod("adicionarPessoaComandaAComanda", int.class, int.class);
+                m.invoke(comandaDAO, pci.getIdComanda(), pci.getIdPessoaComanda());
+            } catch (NoSuchMethodException e1) {
+                try {
+                   java.lang.reflect.Method m2 = comandaDAO.getClass().getMethod("adicionarPessoaComanda", int.class, int.class);
+                    m2.invoke(comandaDAO, pci.getIdComanda(), pci.getIdPessoaComanda());
+                } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException e2) {
+                   
+                    System.out.println("Aviso: método de sincronização não encontrado ou falhou em ComandaDAO.");
+                }
+            } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
+                System.out.println("Aviso: falha ao invocar método de sincronização em ComandaDAO: " + e.getMessage());
+            }
+        }
+        
         return true;
     }
 
-    public Pessoa_Comanda_Item buscarPorChaveComposta(int idPessoa, int idComanda, int idItem) throws Exception {
-        var chave = indiceChave.buscar(idPessoa, idComanda, idItem);
+    public Pessoa_Comanda_Item buscarPorChaveComposta(int idPessoaComanda, int idComanda, int idItem) throws Exception {
+        var chave = indiceChave.buscar(idPessoaComanda, idComanda, idItem);
        
         if (chave != null) {
             Pessoa_Comanda_Item resultado = buscarPorOffset(chave.getOffset());
@@ -107,27 +123,28 @@ public class Pessoa_Comanda_ItemDAO {
     }
 
     public boolean alterarPessoa_Comanda_Item(Pessoa_Comanda_Item novo) throws Exception {
-        Pessoa_Comanda_Item antigo = buscarPorChaveComposta(novo.getIdPessoa(), novo.getIdComanda(), novo.getIdItem());
+        Pessoa_Comanda_Item antigo = buscarPorChaveComposta(novo.getIdPessoaComanda(), novo.getIdComanda(), novo.getIdItem());
         if (antigo == null) return false;
 
         return arqPessoa_Comanda_Item.update(novo);
     }
 
-    public boolean excluirPessoa_Comanda_Item(int idPessoa, int idComanda, int idItem) throws Exception {
-        Pessoa_Comanda_Item registro = buscarPorChaveComposta(idPessoa, idComanda, idItem);
+    public boolean excluirPessoa_Comanda_Item(int idPessoaComanda, int idComanda, int idItem) throws Exception {
+        Pessoa_Comanda_Item registro = buscarPorChaveComposta(idPessoaComanda, idComanda, idItem);
         if (registro == null) return false;
 
         boolean sucesso = arqPessoa_Comanda_Item.delete(calcularId(registro));
         if (sucesso) {
-            indiceChave.remover(idPessoa, idComanda, idItem);
+            indiceChave.remover(idPessoaComanda, idComanda, idItem);
         }
         return sucesso;
     }
 
-    public List<Pessoa_Comanda_Item> buscarPorPessoa(int idPessoa) throws Exception {
+    // Métodos de busca modificados para usar PessoaComanda
+    public List<Pessoa_Comanda_Item> buscarPorPessoaComanda(int idPessoaComanda) throws Exception {
         List<Pessoa_Comanda_Item> resultados = new ArrayList<>();
         arqPessoa_Comanda_Item.scanValidRecords((Long pos, Pessoa_Comanda_Item registro) -> {
-            if (registro.getIdPessoa() == idPessoa) {
+            if (registro.getIdPessoaComanda() == idPessoaComanda) {
                 resultados.add(registro);
             }
         });
@@ -154,9 +171,9 @@ public class Pessoa_Comanda_ItemDAO {
         return resultados;
     }
 
-    public List<Integer> buscarItensUnicosPorPessoa(int idPessoa) throws Exception {
+    public List<Integer> buscarItensUnicosPorPessoaComanda(int idPessoaComanda) throws Exception {
         List<Integer> itensUnicos = new ArrayList<>();
-        List<Pessoa_Comanda_Item> relacoes = buscarPorPessoa(idPessoa);
+        List<Pessoa_Comanda_Item> relacoes = buscarPorPessoaComanda(idPessoaComanda);
         
         for (Pessoa_Comanda_Item relacao : relacoes) {
             if (!itensUnicos.contains(relacao.getIdItem())) {
@@ -174,7 +191,6 @@ public class Pessoa_Comanda_ItemDAO {
         return todos;
     }
 
-
     private long calcularOffset(int id) {
         int tamanhoRegistro = new Pessoa_Comanda_Item().size();
         int tamanhoCabecalho = 12; 
@@ -188,7 +204,7 @@ public class Pessoa_Comanda_ItemDAO {
     private long encontrarOffsetNoArquivo(Pessoa_Comanda_Item pci) throws Exception {
         final long[] offsetEncontrado = {-1};
         arqPessoa_Comanda_Item.scanValidRecords((Long pos, Pessoa_Comanda_Item registro) -> {
-            if (registro.getIdPessoa() == pci.getIdPessoa() && 
+            if (registro.getIdPessoaComanda() == pci.getIdPessoaComanda() && 
                 registro.getIdComanda() == pci.getIdComanda() && 
                 registro.getIdItem() == pci.getIdItem()) {
                 offsetEncontrado[0] = pos;
@@ -212,7 +228,6 @@ public class Pessoa_Comanda_ItemDAO {
 
     private Pessoa_Comanda_Item buscarPorOffsetSequencial(long offsetAlvo) throws Exception {
         int tentativas = 0;
-        // Limite de segurança para evitar loop infinito
         while (tentativas < 10000) { 
             try {
                 tentativas++;
@@ -233,7 +248,7 @@ public class Pessoa_Comanda_ItemDAO {
     public void fechar() throws Exception {
         indiceChave.fechar();
         arqPessoa_Comanda_Item.close();
-        arqPessoa.close();
+        arqPessoaComanda.close();
         arqComanda.close();
         arqItem.close();
     }
