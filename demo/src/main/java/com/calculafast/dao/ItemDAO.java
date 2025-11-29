@@ -12,7 +12,7 @@ public class ItemDAO  {
 
     public ItemDAO() throws Exception {
         arqItem = new Arquivo<>("itens", Item.class.getConstructor());
-        pciDAO = new Pessoa_Comanda_ItemDAO();
+        //pciDAO = new Pessoa_Comanda_ItemDAO();
     }
 
     public ItemDAO(Arquivo<Item> arqItem) {
@@ -45,6 +45,7 @@ public class ItemDAO  {
 
     //mostra todas as pessoas que compraram um item
     public List<Integer> getPessoasQueCompraramItem(int idItem) throws Exception {
+        pciDAO = new Pessoa_Comanda_ItemDAO();
         List<Integer> pessoas = new java.util.ArrayList<>();
        List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorItem(idItem);
         
@@ -58,6 +59,7 @@ public class ItemDAO  {
 
     //busca quantas comandas o item aparece
     public List<Integer> getComandasDoItem(int idItem) throws Exception {
+        pciDAO = new Pessoa_Comanda_ItemDAO();
         List<Integer> comandas = new java.util.ArrayList<>();
         List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorItem(idItem);
         
@@ -67,5 +69,9 @@ public class ItemDAO  {
             }
         }
         return comandas;
+    }
+    public void fechar() throws Exception {
+        arqItem.close();
+        pciDAO.fechar();
     }
 }

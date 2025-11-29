@@ -215,13 +215,10 @@ public void setPciDAO(Pessoa_Comanda_ItemDAO pciDAO) {
         return arqComandas.delete(id);
     }
 
-    // Listagem: retorna ids de comandas onde uma pessoa faz parte (usando relacionamento 1:N)
-    // Percorre todas as comandas e verifica se a pessoa está na lista de pessoas da comanda
     public java.util.List<Integer> listarPorPessoa(int pessoaId) throws Exception {
         java.util.ArrayList<Integer> out = new java.util.ArrayList<>();
         java.util.HashSet<Integer> comandasVerificadas = new java.util.HashSet<>();
         
-        // Usa Pessoa_Comanda_Item para encontrar todas as comandas onde a pessoa aparece
         List<Pessoa_Comanda_Item> relacoes = pciDAO.buscarPorPessoaComanda(pessoaId);
         
         for (Pessoa_Comanda_Item pci : relacoes) {
@@ -233,7 +230,6 @@ public void setPciDAO(Pessoa_Comanda_ItemDAO pciDAO) {
             }
             comandasVerificadas.add(comandaId);
             
-            // Verifica se a pessoa realmente está na lista invertida da comanda (relacionamento 1:N)
             List<Integer> pessoasDaComanda = listarPessoasPorComanda(comandaId);
             if (pessoasDaComanda.contains(pessoaId)) {
                 // Verifica se a comanda ainda existe e está ativa
@@ -381,6 +377,10 @@ public void setPciDAO(Pessoa_Comanda_ItemDAO pciDAO) {
         for (Integer pessoaId : pessoasUnicas) {
             adicionarPessoaAComanda(comandaId, pessoaId);
         }
+    }
+    public void fechar() throws Exception {
+        arqComandas.close();
+        pciDAO.fechar();
     }
 }
 

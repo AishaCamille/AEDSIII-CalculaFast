@@ -20,7 +20,10 @@ public class Pessoa_Comanda_ItemDAO {
     private Arquivo<PessoaComanda> arqPessoaComanda;
     private Arquivo<Comanda> arqComanda;
     private Arquivo<Item> arqItem;
+
+    private PessoaComandaDAO pessoaComandaDAO;
     private ComandaDAO comandaDAO;
+    private ItemDAO itemDAO;
     
     public void setComandaDAO(ComandaDAO comandaDAO) {
         this.comandaDAO = comandaDAO;
@@ -35,83 +38,139 @@ public class Pessoa_Comanda_ItemDAO {
         arqPessoa_Comanda_Item = new Arquivo<>("Pessoa_Comanda_Item", Pessoa_Comanda_Item.class.getConstructor());
         indiceChave = new IndiceChaveComposta("dados/indice_chave_composta");
       
-        this.arqPessoaComanda = new Arquivo<>("PessoaComanda", PessoaComanda.class.getConstructor());
-        this.arqComanda = new Arquivo<>("Comanda", Comanda.class.getConstructor());
-        this.arqItem = new Arquivo<>("Item", Item.class.getConstructor());
+       // this.pessoaComandaDAO = new PessoaComandaDAO();
+      //  this.comandaDAO = new ComandaDAO();
+       // this.itemDAO = new ItemDAO();
     }
-
-    public boolean incluirPessoa_Comanda_Item(Pessoa_Comanda_Item pci) throws Exception {
-        boolean sucesso = false;
+      private PessoaComandaDAO getPessoaComandaDAO() throws Exception {
+        if (pessoaComandaDAO == null) {
+            pessoaComandaDAO = new PessoaComandaDAO();
+        }
+        return pessoaComandaDAO;
+    }
+    
+    private ComandaDAO getComandaDAO() throws Exception {
+        if (comandaDAO == null) {
+            comandaDAO = new ComandaDAO();
+        }
+        return comandaDAO;
+    }
+     private ItemDAO getItemDAO() throws Exception {
+        if (itemDAO == null) {
+            itemDAO = new ItemDAO();
+        }
+        return itemDAO;
+    }
+      public Pessoa_Comanda_ItemDAO(PessoaComandaDAO pessoaComandaDAO, ComandaDAO comandaDAO, ItemDAO itemDAO) throws Exception {
+        File pastaIndices = new File("./indices");
+        if (!pastaIndices.exists()) {
+            pastaIndices.mkdirs();
+        }
         
-        // Verifica integridade referencial
-        if (arqPessoaComanda.read(pci.getIdPessoaComanda()) == null) {
+        arqPessoa_Comanda_Item = new Arquivo<>("Pessoa_Comanda_Item", Pessoa_Comanda_Item.class.getConstructor());
+        indiceChave = new IndiceChaveComposta("dados/indice_chave_composta");
+      
+       // this.pessoaComandaDAO = pessoaComandaDAO;
+       // this.comandaDAO = comandaDAO;
+       // this.itemDAO = itemDAO;
+    }
+    
+
+   public boolean incluirPessoa_Comanda_Item(Pessoa_Comanda_Item pci) throws Exception {
+    boolean sucesso = false;
+        getPessoaComandaDAO();
+        getComandaDAO();
+        getItemDAO();
+       if (pessoaComandaDAO == null) {
+            throw new Exception("PessoaComandaDAO não foi inicializado.");
+        }
+        if (comandaDAO == null) {
+            throw new Exception("ComandaDAO não foi inicializado.");
+        }
+        if (itemDAO == null) {
+            throw new Exception("ItemDAO não foi inicializado.");
+        }
+    
+        if (pessoaComandaDAO.buscar(pci.getIdPessoaComanda()) == null) {
             throw new Exception("Erro de Integridade: PessoaComanda com ID " + pci.getIdPessoaComanda() + " não existe.");
         }
         
-        if (arqComanda.read(pci.getIdComanda()) == null) {
+        ///verificacao de integridade
+        if (getPessoaComandaDAO().buscar(pci.getIdPessoaComanda()) == null) {
+            throw new Exception("Erro de Integridade: PessoaComanda com ID " + pci.getIdPessoaComanda() + " não existe.");
+        }
+        
+        if (getComandaDAO().buscarComanda(pci.getIdComanda()) == null) {
             throw new Exception("Erro de Integridade: Comanda com ID " + pci.getIdComanda() + " não existe.");
         }
         
-        if (arqItem.read(pci.getIdItem()) == null) {
+        if (getItemDAO().buscarItem(pci.getIdItem()) == null) {
             throw new Exception("Erro de Integridade: Item com ID " + pci.getIdItem() + " não existe.");
         }
-        
-        Pessoa_Comanda_Item existente = buscarPorChaveComposta(pci.getIdPessoaComanda(), pci.getIdComanda(), pci.getIdItem());
-        
-        if (existente != null) {
-            throw new Exception("Já existe registro com esta chave composta!");
-        }
-
-        long offset = arqPessoa_Comanda_Item.createWithOffset(pci);
-       
-        if (offset < 0) {
-            int idHash = pci.getChaveComposta();
-            Pessoa_Comanda_Item registroArquivo = arqPessoa_Comanda_Item.read(idHash);
-            
-            if (registroArquivo != null && 
-                registroArquivo.getIdPessoaComanda() == pci.getIdPessoaComanda() && 
-                registroArquivo.getIdComanda() == pci.getIdComanda() && 
-                registroArquivo.getIdItem() == pci.getIdItem()) {
-                
-                offset = encontrarOffsetNoArquivo(registroArquivo);
-                
-                if (offset >= 0) {
-                    indiceChave.inserir(registroArquivo.getIdPessoaComanda(), registroArquivo.getIdComanda(), 
-                                       registroArquivo.getIdItem(), offset);
-                    return true;
-                } else {
-                    throw new Exception("Registro existe no arquivo mas não foi possível encontrar o offset.");
-                }
-            } else {
-                throw new Exception("Erro ao criar registro. ID (hash) já existe para outro registro ou registro não encontrado.");
-            }
-        }
-        
-        indiceChave.inserir(pci.getIdPessoaComanda(), pci.getIdComanda(), pci.getIdItem(), offset);
-        
-        System.out.println("Inserção concluída com sucesso.");
-        sucesso = true;
-        
-        if (sucesso && comandaDAO != null) {
-            try {
-                java.lang.reflect.Method m = comandaDAO.getClass().getMethod("adicionarPessoaComandaAComanda", int.class, int.class);
-                m.invoke(comandaDAO, pci.getIdComanda(), pci.getIdPessoaComanda());
-            } catch (NoSuchMethodException e1) {
-                try {
-                   java.lang.reflect.Method m2 = comandaDAO.getClass().getMethod("adicionarPessoaComanda", int.class, int.class);
-                    m2.invoke(comandaDAO, pci.getIdComanda(), pci.getIdPessoaComanda());
-                } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException e2) {
-                   
-                    System.out.println("Aviso: método de sincronização não encontrado ou falhou em ComandaDAO.");
-                }
-            } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
-                System.out.println("Aviso: falha ao invocar método de sincronização em ComandaDAO: " + e.getMessage());
-            }
-        }
-        
-        return true;
+     Pessoa_Comanda_Item existente = buscarPorChaveComposta(pci.getIdPessoaComanda(), pci.getIdComanda(), pci.getIdItem());
+    
+    if (existente != null) {
+        throw new Exception("Já existe registro com esta chave composta!");
     }
 
+    long offset = arqPessoa_Comanda_Item.createWithOffset(pci);
+   
+    if (offset < 0) {
+        int idHash = pci.getChaveComposta();
+        Pessoa_Comanda_Item registroArquivo = arqPessoa_Comanda_Item.read(idHash);
+        
+        if (registroArquivo != null && 
+            registroArquivo.getIdPessoaComanda() == pci.getIdPessoaComanda() && 
+            registroArquivo.getIdComanda() == pci.getIdComanda() && 
+            registroArquivo.getIdItem() == pci.getIdItem()) {
+            
+            offset = encontrarOffsetNoArquivo(registroArquivo);
+            
+            if (offset >= 0) {
+                indiceChave.inserir(registroArquivo.getIdPessoaComanda(), registroArquivo.getIdComanda(), 
+                                   registroArquivo.getIdItem(), offset);
+                return true;
+            } else {
+                throw new Exception("Registro existe no arquivo mas não foi possível encontrar o offset.");
+            }
+        } else {
+            throw new Exception("Erro ao criar registro. ID (hash) já existe para outro registro ou registro não encontrado.");
+        }
+    }
+    
+    indiceChave.inserir(pci.getIdPessoaComanda(), pci.getIdComanda(), pci.getIdItem(), offset);
+    
+    System.out.println("Inserção concluída com sucesso.");
+    sucesso = true;
+    
+    if (sucesso && getComandaDAO() != null) {
+        try {
+            java.lang.reflect.Method m = getComandaDAO().getClass().getMethod("adicionarPessoaComandaAComanda", int.class, int.class);
+            m.invoke(getComandaDAO(), pci.getIdComanda(), pci.getIdPessoaComanda());
+        } catch (NoSuchMethodException e1) {
+            try {
+               java.lang.reflect.Method m2 = getComandaDAO().getClass().getMethod("adicionarPessoaComanda", int.class, int.class);
+                m2.invoke(getComandaDAO(), pci.getIdComanda(), pci.getIdPessoaComanda());
+            } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException e2) {
+               
+                System.out.println("Aviso: método de sincronização não encontrado ou falhou em ComandaDAO.");
+            }
+        } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
+            System.out.println("Aviso: falha ao invocar método de sincronização em ComandaDAO: " + e.getMessage());
+        }
+    }
+    
+    return true;
+}
+
+//teste
+ public void setPessoaComandaDAO(PessoaComandaDAO pessoaComandaDAO) {
+        this.pessoaComandaDAO = pessoaComandaDAO;
+    }
+public void setItemDAO(ItemDAO itemDAO) {
+        this.itemDAO = itemDAO;
+    }
+//
     public Pessoa_Comanda_Item buscarPorChaveComposta(int idPessoaComanda, int idComanda, int idItem) throws Exception {
         var chave = indiceChave.buscar(idPessoaComanda, idComanda, idItem);
        
@@ -248,8 +307,16 @@ public class Pessoa_Comanda_ItemDAO {
     public void fechar() throws Exception {
         indiceChave.fechar();
         arqPessoa_Comanda_Item.close();
-        arqPessoaComanda.close();
-        arqComanda.close();
-        arqItem.close();
+        
+        // Fecha os DAOs se eles foram criados por este objeto
+        if (pessoaComandaDAO != null) {
+            pessoaComandaDAO.fechar();
+        }
+        if (comandaDAO != null) {
+            comandaDAO.fechar();
+        }
+        if (itemDAO != null) {
+            itemDAO.fechar();
+        }
     }
 }
