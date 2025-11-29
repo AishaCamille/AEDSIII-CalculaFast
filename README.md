@@ -59,13 +59,17 @@ calculafast/
     │   │           └── seguranca/
     │   │               └── RSA.java
     │   │
-    │   └── resources/
-    │       └── dados/                (arquivos binários .db)
-    │           ├── pessoas/
-    │           ├── comanda/
-    │           ├── item/
-    │           └── pagamento/
-    │           └── pessoa_comanda_item/
+    │   ├── resources/
+    │   │     └── public/    → arquivos front-end 
+    │   │           ├── index.html
+    │   │           ├── style.css
+    │   │           └── script.js
+    │   └── dados/                (arquivos binários .db)
+    │       ├── pessoas/
+    │       ├── comanda/
+    │       ├── item/
+    │       └── pagamento/
+    │        └── pessoa_comanda_item/
     │
     └── test/
         └── java/
