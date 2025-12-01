@@ -1,4 +1,4 @@
-/*2package com.calculafast.app;
+package com.calculafast.app;
 import com.calculafast.dao.PessoaDAO;
 import com.calculafast.model.Pessoa;
 
@@ -19,18 +19,37 @@ import com.calculafast.model.PessoaComanda;
 
 import com.google.gson.Gson;
 
-import static spark.Spark.delete;
-import static spark.Spark.get;
-import static spark.Spark.port;
-import static spark.Spark.post;
-import static spark.Spark.put;
+import static spark.Spark.*;
 
 import java.util.List;
+import java.util.Map;
 
 public class Aplicacao {
     public static void main(String[] args) throws Exception {
 
-        port(8080);
+        port(4567);
+
+
+  options("/*", (request, response) -> {
+            String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
+            if (accessControlRequestHeaders != null) {
+                response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
+            }
+
+            String accessControlRequestMethod = request.headers("Access-Control-Request-Method");
+            if (accessControlRequestMethod != null) {
+                response.header("Access-Control-Allow-Methods", accessControlRequestMethod);
+            }
+
+            return "OK";
+        });
+
+        before((request, response) -> {
+            response.header("Access-Control-Allow-Origin", "*");
+            response.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            response.header("Access-Control-Allow-Headers", "Content-Type");
+        });
+
         Gson gson = new Gson();
 
         PessoaDAO pessoaDAO = new PessoaDAO();
@@ -46,10 +65,29 @@ public class Aplicacao {
         });
         //criar
         post("/pessoas", (req, res) -> {
-            Pessoa p = gson.fromJson(req.body(), Pessoa.class);
-            pessoaDAO.incluirPessoa(p);
-            return "Pessoa criada!";
-        });
+    res.type("application/json");
+    try {
+        Pessoa p = gson.fromJson(req.body(), Pessoa.class);
+        
+        String senhaTemp = p.getSenha(); 
+        if (senhaTemp != null && !senhaTemp.isEmpty()) {
+            p.setSenha(senhaTemp); 
+        }
+        
+        boolean criado = pessoaDAO.incluirPessoa(p);
+        
+        if (criado) {
+            res.status(201);
+            return gson.toJson(Map.of("mensagem", "Pessoa criada com sucesso!"));
+        } else {
+            res.status(400);
+            return gson.toJson(Map.of("erro", "Erro ao criar pessoa"));
+        }
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro: " + e.getMessage()));
+    }
+});
         //atualizar
         put("/pessoas/:id", (req, res) -> {
             int id = Integer.parseInt(req.params("id"));
@@ -230,4 +268,3 @@ get("/pessoa-comanda-item/item/:idItem", (req, res) -> {
 
     }
 }
-*/

@@ -7,54 +7,209 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Paytone+One&display=swap" rel="stylesheet">
-    <link rel = "icon" href ="./assets/logo.png" type = "image/x-icon"> 
+    <link rel="icon" href="./assets/logo.png" type="image/x-icon"> 
     <link rel="stylesheet" href="index.css">
 
-   
     
     <script>
-	
-		function abrirNovaComanda() {
-		//função que abre a proxima pagina
-			window.location.href = "pessoas.html";  
-		}
+        const API_URL = 'http://localhost:4567';
 
+        // Verifica se está logado ao carregar a página
+        window.addEventListener('DOMContentLoaded', function() {
+            const usuarioLogado = localStorage.getItem('usuarioLogado');
+            if (!usuarioLogado) {
+                document.getElementById('modalLogin').classList.add('show');
+            } else {
+                const usuario = JSON.parse(usuarioLogado);
+                console.log('Usuário logado:', usuario.nome);
+            }
+        });
 
-		  function compartilharNoWhatsApp() {
-			//função que compartilha o link da aplicação apra outras pessoas atraves do whatsapp
-		    const link = window.location.href; // Pega o link da página atual
-		    const mensagem = `Utilize este link para ter acesso ao CalculaFast. Um aplicação desenvolvida para otimizar a diversão com a galera! ${link}`;
-		    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensagem)}`;
+        function toggleForms() {
+            document.getElementById('loginForm').classList.toggle('hidden');
+            document.getElementById('cadastroForm').classList.toggle('hidden');
+            hideAlert('loginAlert');
+            hideAlert('cadastroAlert');
+        }
 
-		    window.open(url, '_blank'); // Abre o WhatsApp Web ou App numa nova aba
-		  }
+        function showAlert(elementId, message, type) {
+            const alert = document.getElementById(elementId);
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+        }
 
+        function hideAlert(elementId) {
+            const alert = document.getElementById(elementId);
+            alert.className = 'alert';
+        }
 
+        async function handleCadastro(event) {
+            event.preventDefault();
+            
+            const nome = document.getElementById('cadastroNome').value;
+            const email = document.getElementById('cadastroEmail').value;
+            const senha = document.getElementById('cadastroSenha').value;
 
-		document.addEventListener('DOMContentLoaded', function() {//executa o codigo depois que o html estiver todo carregado
-			//logica que faz o menu ficar lateral no tamanho mobile
-		    let menuOpen = false;//para saber se o manu está aberto ou nao
-		    const menuMobileMain = document.querySelector('.menu-mobile-main');//seleciona elementos do html
-		    const asideElement = document.querySelector('aside');
+            try {
+                const response = await fetch(`${API_URL}/pessoas`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ nome, email, senha })
+                });
 
-		    menuMobileMain.addEventListener('click', function() {
-		        if (menuOpen) {
-		            asideElement.style.transform = 'translateX(-228px)';
-		            menuMobileMain.style.filter = 'invert(98%) sepia(83%) saturate(6956%) hue-rotate(354deg) brightness(105%) contrast(105%)';
-		        } else {
-		            asideElement.style.transform = 'translateX(0px)';
-		            menuMobileMain.style.filter = 'invert(0%) sepia(7%) saturate(7473%) hue-rotate(158deg) brightness(104%) contrast(96%)';
-		        }
-		        menuOpen = !menuOpen;
-		    });
-		});
+                const data = await response.text();
 
+                if (response.ok) {
+                    showAlert('cadastroAlert', 'Conta criada com sucesso! Faça login.', 'success');
+                    
+                    document.getElementById('cadastroNome').value = '';
+                    document.getElementById('cadastroEmail').value = '';
+                    document.getElementById('cadastroSenha').value = '';
+                    
+                    setTimeout(() => {
+                        toggleForms();
+                    }, 2000);
+                } else {
+                    showAlert('cadastroAlert', data || 'Erro ao criar conta', 'error');
+                }
+            } catch (error) {
+                showAlert('cadastroAlert', 'Erro de conexão com o servidor', 'error');
+                console.error('Erro:', error);
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const senha = document.getElementById('loginSenha').value;
+
+            try {
+                const response = await fetch(`${API_URL}/pessoas`);
+                
+                if (!response.ok) {
+                    showAlert('loginAlert', 'Erro ao conectar com o servidor', 'error');
+                    return;
+                }
+
+                const pessoas = await response.json();
+                const pessoa = pessoas.find(p => p.email === email);
+
+                if (!pessoa) {
+                    showAlert('loginAlert', 'Email não encontrado', 'error');
+                    return;
+                }
+
+                showAlert('loginAlert', 'Login realizado com sucesso!', 'success');
+                localStorage.setItem('usuarioLogado', JSON.stringify(pessoa));
+                
+                setTimeout(() => {
+                    document.getElementById('modalLogin').classList.remove('show');
+                }, 1000);
+
+            } catch (error) {
+                showAlert('loginAlert', 'Erro de conexão com o servidor', 'error');
+                console.error('Erro:', error);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('usuarioLogado');
+            location.reload();
+        }
+
+        function abrirNovaComanda() {
+            window.location.href = "pessoas.html";  
+        }
+
+        function compartilharNoWhatsApp() {
+            const link = window.location.href;
+            const mensagem = `Utilize este link para ter acesso ao CalculaFast. Uma aplicação desenvolvida para otimizar a diversão com a galera! ${link}`;
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensagem)}`;
+            window.open(url, '_blank');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let menuOpen = false;
+            const menuMobileMain = document.querySelector('.menu-mobile-main');
+            const asideElement = document.querySelector('aside');
+
+            menuMobileMain.addEventListener('click', function() {
+                if (menuOpen) {
+                    asideElement.style.transform = 'translateX(-228px)';
+                    menuMobileMain.style.filter = 'invert(98%) sepia(83%) saturate(6956%) hue-rotate(354deg) brightness(105%) contrast(105%)';
+                } else {
+                    asideElement.style.transform = 'translateX(0px)';
+                    menuMobileMain.style.filter = 'invert(0%) sepia(7%) saturate(7473%) hue-rotate(158deg) brightness(104%) contrast(96%)';
+                }
+                menuOpen = !menuOpen;
+            });
+        });
     </script>
 
-   <title>CalculaFast</title>
+    <title>CalculaFast</title>
 </head>
 
 <body>
+    <!-- Modal de Login/Cadastro -->
+    <div id="modalLogin" class="modal-overlay">
+        <div class="modal-login">
+            <!-- Formulário de Login -->
+            <div id="loginForm">
+                <h2>Entrar</h2>
+                <div id="loginAlert" class="alert"></div>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginSenha">Senha</label>
+                        <input type="password" id="loginSenha" required>
+                    </div>
+
+                    <button type="submit" class="btn-login">Entrar</button>
+                </form>
+
+                <div class="toggle-form">
+                    Não tem uma conta? <a onclick="toggleForms()">Cadastre-se</a>
+                </div>
+            </div>
+
+            <!-- Formulário de Cadastro -->
+            <div id="cadastroForm" class="hidden">
+                <h2>Criar Conta</h2>
+                <div id="cadastroAlert" class="alert"></div>
+
+                <form onsubmit="handleCadastro(event)">
+                    <div class="form-group">
+                        <label for="cadastroNome">Nome</label>
+                        <input type="text" id="cadastroNome" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cadastroEmail">Email</label>
+                        <input type="email" id="cadastroEmail" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cadastroSenha">Senha</label>
+                        <input type="password" id="cadastroSenha" required minlength="6">
+                    </div>
+
+                    <button type="submit" class="btn-login">Cadastrar</button>
+                </form>
+
+                <div class="toggle-form">
+                    Já tem uma conta? <a onclick="toggleForms()">Faça login</a>
+                </div>
+            </div>
+        </div>
+    </div>
     <main>
         <aside>
             <nav class="navegacao">
@@ -68,7 +223,9 @@
                         </a>
                     </li>
                     <li>
-                        
+                        <a>
+                            <button onclick="logout()">Sair</button>
+                        </a>
                     </li>
                 </ul>
             </nav>
@@ -80,9 +237,9 @@
             </h1>
             <div class="mesa">
                 <button onclick="abrirNovaComanda()">Abrir Nova Comanda</button>
-            <button onclick="compartilharNoWhatsApp()" style="background-color: #1ba14d; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
-				  📲 Convidar Amigos
-				</button>
+                <button onclick="compartilharNoWhatsApp()" style="background-color: #1ba14d; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+                    📲 Convidar Amigos
+                </button>
                 <div class="cervejamesa">
                     <img src="./assets/cerveja-removebg-preview.png">
                 </div>
@@ -92,4 +249,3 @@
 </body>
 
 </html>
-

@@ -1,4 +1,4 @@
-package com.calculafast.app;
+/*package com.calculafast.app;
 import java.util.Scanner;
 import com.calculafast.menu.MenuComanda;
 import com.calculafast.menu.MenuConsultas;
@@ -82,5 +82,5 @@ public class Principal {
             console.close();
         }
     }
-}
+}*/
 

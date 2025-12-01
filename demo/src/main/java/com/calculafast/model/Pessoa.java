@@ -94,27 +94,46 @@ private static RSA rsa = new RSA();
 	
   // Implementação do método toByteArray()
 
-    public byte[] toByteArray() throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeInt(this.id);
-        dos.writeUTF(this.nome);
-		dos.writeUTF(this.email);
-		 dos.writeUTF(this.senha != null ? this.senha : "");
-        return baos.toByteArray();
+   public byte[] toByteArray() throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    DataOutputStream dos = new DataOutputStream(baos);
+    dos.writeInt(this.id);
+    dos.writeUTF(this.nome);
+    dos.writeUTF(this.email);
+    
+    // Salva a senha criptografada
+    if (this.senhaCriptografada != null && this.senhaCriptografada.length > 0) {
+        dos.writeInt(this.senhaCriptografada.length);
+        for (BigInteger parte : this.senhaCriptografada) {
+            byte[] bytes = parte.toByteArray();
+            dos.writeInt(bytes.length);
+            dos.write(bytes);
+        }
+    } else {
+        dos.writeInt(0); // Nenhuma senha
     }
-	
-	  //metodo de from byte to array
+    
+    return baos.toByteArray();
+}
 
-    public void fromByteArray(byte[] b) throws IOException{
-        ByteArrayInputStream bais= new ByteArrayInputStream(b);
-        DataInputStream dis = new DataInputStream(bais);
-        this.id = dis.readInt();
-        this.nome = dis.readUTF();
-		this.email= dis.readUTF();
-		this.senha= dis.readUTF();
-        
+public void fromByteArray(byte[] b) throws IOException {
+    ByteArrayInputStream bais = new ByteArrayInputStream(b);
+    DataInputStream dis = new DataInputStream(bais);
+    this.id = dis.readInt();
+    this.nome = dis.readUTF();
+    this.email = dis.readUTF();
+    
+    int tamanho = dis.readInt();
+    if (tamanho > 0) {
+        this.senhaCriptografada = new BigInteger[tamanho];
+        for (int i = 0; i < tamanho; i++) {
+            int bytesLength = dis.readInt();
+            byte[] bytes = new byte[bytesLength];
+            dis.readFully(bytes);
+            this.senhaCriptografada[i] = new BigInteger(bytes);
+        }
     }
+}
 
 	/**
 	 * Método sobreposto da classe Object. É executado quando um objeto precisa
