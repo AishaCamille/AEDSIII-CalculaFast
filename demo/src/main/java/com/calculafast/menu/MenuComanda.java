@@ -1,7 +1,8 @@
 package com.calculafast.menu;
-import com.calculafast.model.Comanda;
-import com.calculafast.dao.ComandaDAO;
 import java.util.Scanner;
+
+import com.calculafast.dao.ComandaDAO;
+import com.calculafast.model.Comanda;
 
 public class MenuComanda {
      private ComandaDAO comandaDAO;
@@ -22,6 +23,7 @@ public class MenuComanda {
             System.out.println("3 - Alterar");
             System.out.println("4 - Excluir");
             System.out.println("5 - Listar por Pessoa (1:N)");
+            System.out.println("6 - Listar Pessoas da Comanda (N:N)");
             System.out.println("0 - Voltar");
 
             System.out.print("\nOpção: ");
@@ -182,7 +184,7 @@ public class MenuComanda {
         int idPessoa;
         try { idPessoa = Integer.parseInt(idStr); } catch (NumberFormatException e) { System.out.println("ID inválido."); return; }
         try {
-            java.util.List<Integer> ids = comandaDAO.listarPorPessoa(idPessoa);
+            java.util.List<Integer> ids = comandaDAO.listarPorPessoaComanda(idPessoa);
             if (ids.isEmpty()) {
                 System.out.println("Sem comandas para a pessoa " + idPessoa);
             } else {
@@ -211,7 +213,7 @@ public class MenuComanda {
             }
             
             // Lista as pessoas da comanda usando o relacionamento 1:N
-            java.util.List<Integer> pessoas = comandaDAO.listarPessoasPorComanda(idComanda);
+            java.util.List<Integer> pessoas = comandaDAO.listarPessoasComandasPorComanda(idComanda);
             
             System.out.println("\n=== Pessoas da Comanda " + idComanda + " ===");
             if (pessoas.isEmpty()) {

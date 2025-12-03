@@ -1,12 +1,13 @@
 /*package com.calculafast.app;
 import java.util.Scanner;
+
 import com.calculafast.menu.MenuComanda;
 import com.calculafast.menu.MenuConsultas;
 import com.calculafast.menu.MenuItem;
 import com.calculafast.menu.MenuPagamento;
+import com.calculafast.menu.MenuPessoaComanda;
 import com.calculafast.menu.MenuPessoa_Comanda_Item;
 import com.calculafast.menu.MenuPessoas;
-import com.calculafast.menu.MenuPessoaComanda;
 
 
 
@@ -82,5 +83,6 @@ public class Principal {
             console.close();
         }
     }
-}*/
+}
 
+*/

@@ -1,11 +1,12 @@
 package com.calculafast.menu;
 
-import com.calculafast.dao.PessoaComandaDAO;
-import com.calculafast.dao.ItemDAO;
-import com.calculafast.dao.ComandaDAO;
-import com.calculafast.dao.Pessoa_Comanda_ItemDAO;
 import java.util.List;
 import java.util.Scanner;
+
+import com.calculafast.dao.ComandaDAO;
+import com.calculafast.dao.ItemDAO;
+import com.calculafast.dao.PessoaComandaDAO;
+import com.calculafast.dao.Pessoa_Comanda_ItemDAO;
 
 public class MenuConsultas {
     private Scanner console = new Scanner(System.in);
@@ -109,7 +110,7 @@ public class MenuConsultas {
         console.nextLine();
         
         try {
-            List<Integer> pessoas = comandaDAO.getPessoasDaComanda(idComanda);
+            List<Integer> pessoas = comandaDAO.getPessoasComandasDaComanda(idComanda);
             System.out.println("\nPessoas na comanda " + idComanda + ":");
             for (Integer idPessoa : pessoas) {
                 System.out.println(" - Pessoa ID: " + idPessoa);

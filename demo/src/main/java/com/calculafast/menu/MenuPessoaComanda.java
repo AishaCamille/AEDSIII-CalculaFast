@@ -96,7 +96,7 @@ public class MenuPessoaComanda {
             PessoaComanda pessoaComanda = new PessoaComanda();
             pessoaComanda.setNome(nome);
             pessoaComanda.setIdComanda(idComanda);
-            pessoaComanda.setConsumoPessoa(consumoPessoa);
+           // pessoaComanda.setConsumoPessoa(consumoPessoa);
             
             int idGerado = pessoaComandaDAO.incluir(pessoaComanda);
             if (idGerado > 0) {
@@ -134,10 +134,7 @@ public class MenuPessoaComanda {
 
            
 
-            System.out.print("Novo consumo (vazio para manter " + pessoaComanda.getConsumoPessoa() + "): ");
-            String consumoStr = console.nextLine();
-            if (!consumoStr.isEmpty()) pessoaComanda.setConsumoPessoa(Double.parseDouble(consumoStr));
-
+           
             if (pessoaComandaDAO.atualizar(pessoaComanda)) {
                 System.out.println("Pessoa na Comanda alterada com sucesso.");
             } else {

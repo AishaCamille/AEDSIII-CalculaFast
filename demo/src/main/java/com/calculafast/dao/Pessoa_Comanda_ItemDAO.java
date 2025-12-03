@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.calculafast.index.hash.IndiceChaveComposta;
+import com.calculafast.index.hash.HashExtensivel;
+import com.calculafast.index.hash.ParIdOffset;
 import com.calculafast.model.Arquivo;
 import com.calculafast.model.Comanda;
 import com.calculafast.model.Item;
@@ -17,10 +19,11 @@ public class Pessoa_Comanda_ItemDAO {
     private Arquivo<Pessoa_Comanda_Item> arqPessoa_Comanda_Item;
     private IndiceChaveComposta indiceChave;
     
-    private Arquivo<PessoaComanda> arqPessoaComanda;
-    private Arquivo<Comanda> arqComanda;
-    private Arquivo<Item> arqItem;
-
+    // Índices hash extensível para as chaves estrangeiras
+    private HashExtensivel<ParIdOffset> idxPessoaComanda;
+    private HashExtensivel<ParIdOffset> idxComanda;
+    private HashExtensivel<ParIdOffset> idxItem;
+    
     private PessoaComandaDAO pessoaComandaDAO;
     private ComandaDAO comandaDAO;
     private ItemDAO itemDAO;
@@ -35,14 +38,87 @@ public class Pessoa_Comanda_ItemDAO {
             pastaIndices.mkdirs();
         }
         
+        // Cria pasta específica para os índices desta entidade
+        File pastaPCI = new File("./dados/pessoa_comanda_item");
+        if (!pastaPCI.exists()) {
+            pastaPCI.mkdirs();
+        }
+        
         arqPessoa_Comanda_Item = new Arquivo<>("Pessoa_Comanda_Item", Pessoa_Comanda_Item.class.getConstructor());
         indiceChave = new IndiceChaveComposta("dados/indice_chave_composta");
-      
-       // this.pessoaComandaDAO = new PessoaComandaDAO();
-      //  this.comandaDAO = new ComandaDAO();
-       // this.itemDAO = new ItemDAO();
+        
+        // Inicializa os índices hash extensível para cada chave estrangeira
+        this.idxPessoaComanda = new HashExtensivel<>(
+            ParIdOffset.class.getConstructor(),
+            10,
+            "./dados/pessoa_comanda_item/idx_pessoa_comanda_d.db",
+            "./dados/pessoa_comanda_item/idx_pessoa_comanda_b.db"
+        );
+        
+        this.idxComanda = new HashExtensivel<>(
+            ParIdOffset.class.getConstructor(),
+            10,
+            "./dados/pessoa_comanda_item/idx_comanda_d.db",
+            "./dados/pessoa_comanda_item/idx_comanda_b.db"
+        );
+        
+        this.idxItem = new HashExtensivel<>(
+            ParIdOffset.class.getConstructor(),
+            10,
+            "./dados/pessoa_comanda_item/idx_item_d.db",
+            "./dados/pessoa_comanda_item/idx_item_b.db"
+        );
+        
+        // Reconstrói os índices se necessário
+        reconstruirIndices();
     }
-      private PessoaComandaDAO getPessoaComandaDAO() throws Exception {
+    
+    /**
+     * Reconstrói todos os índices varrendo o arquivo
+     */
+    private void reconstruirIndices() throws Exception {
+        System.out.println("Reconstruindo índices de Pessoa_Comanda_Item...");
+        
+        arqPessoa_Comanda_Item.scanValidRecords((pos, obj) -> {
+            try {
+                Pessoa_Comanda_Item pci = (Pessoa_Comanda_Item) obj;
+                
+                // Atualiza índice da chave composta
+                indiceChave.inserir(
+                    pci.getIdPessoaComanda(), 
+                    pci.getIdComanda(), 
+                    pci.getIdItem(), 
+                    pos
+                );
+                
+                // Atualiza índices das chaves estrangeiras
+                try {
+                    idxPessoaComanda.create(new ParIdOffset(pci.getIdPessoaComanda(), pos));
+                } catch (Exception e) {
+                    idxPessoaComanda.update(new ParIdOffset(pci.getIdPessoaComanda(), pos));
+                }
+                
+                try {
+                    idxComanda.create(new ParIdOffset(pci.getIdComanda(), pos));
+                } catch (Exception e) {
+                    idxComanda.update(new ParIdOffset(pci.getIdComanda(), pos));
+                }
+                
+                try {
+                    idxItem.create(new ParIdOffset(pci.getIdItem(), pos));
+                } catch (Exception e) {
+                    idxItem.update(new ParIdOffset(pci.getIdItem(), pos));
+                }
+                
+            } catch (Exception e) {
+                System.err.println("Erro ao reconstruir índice: " + e.getMessage());
+            }
+        });
+        
+        System.out.println("Índices reconstruídos com sucesso!");
+    }
+    
+    private PessoaComandaDAO getPessoaComandaDAO() throws Exception {
         if (pessoaComandaDAO == null) {
             pessoaComandaDAO = new PessoaComandaDAO();
         }
@@ -55,33 +131,21 @@ public class Pessoa_Comanda_ItemDAO {
         }
         return comandaDAO;
     }
-     private ItemDAO getItemDAO() throws Exception {
+    
+    private ItemDAO getItemDAO() throws Exception {
         if (itemDAO == null) {
             itemDAO = new ItemDAO();
         }
         return itemDAO;
     }
-      public Pessoa_Comanda_ItemDAO(PessoaComandaDAO pessoaComandaDAO, ComandaDAO comandaDAO, ItemDAO itemDAO) throws Exception {
-        File pastaIndices = new File("./indices");
-        if (!pastaIndices.exists()) {
-            pastaIndices.mkdirs();
-        }
-        
-        arqPessoa_Comanda_Item = new Arquivo<>("Pessoa_Comanda_Item", Pessoa_Comanda_Item.class.getConstructor());
-        indiceChave = new IndiceChaveComposta("dados/indice_chave_composta");
-      
-       // this.pessoaComandaDAO = pessoaComandaDAO;
-       // this.comandaDAO = comandaDAO;
-       // this.itemDAO = itemDAO;
-    }
-    
 
-   public boolean incluirPessoa_Comanda_Item(Pessoa_Comanda_Item pci) throws Exception {
-    boolean sucesso = false;
+    public boolean incluirPessoa_Comanda_Item(Pessoa_Comanda_Item pci) throws Exception {
+        boolean sucesso = false;
         getPessoaComandaDAO();
         getComandaDAO();
         getItemDAO();
-       if (pessoaComandaDAO == null) {
+        
+        if (pessoaComandaDAO == null) {
             throw new Exception("PessoaComandaDAO não foi inicializado.");
         }
         if (comandaDAO == null) {
@@ -90,12 +154,8 @@ public class Pessoa_Comanda_ItemDAO {
         if (itemDAO == null) {
             throw new Exception("ItemDAO não foi inicializado.");
         }
-    
-        if (pessoaComandaDAO.buscar(pci.getIdPessoaComanda()) == null) {
-            throw new Exception("Erro de Integridade: PessoaComanda com ID " + pci.getIdPessoaComanda() + " não existe.");
-        }
         
-        ///verificacao de integridade
+        // Verificação de integridade
         if (getPessoaComandaDAO().buscar(pci.getIdPessoaComanda()) == null) {
             throw new Exception("Erro de Integridade: PessoaComanda com ID " + pci.getIdPessoaComanda() + " não existe.");
         }
@@ -107,73 +167,111 @@ public class Pessoa_Comanda_ItemDAO {
         if (getItemDAO().buscarItem(pci.getIdItem()) == null) {
             throw new Exception("Erro de Integridade: Item com ID " + pci.getIdItem() + " não existe.");
         }
-     Pessoa_Comanda_Item existente = buscarPorChaveComposta(pci.getIdPessoaComanda(), pci.getIdComanda(), pci.getIdItem());
-    
-    if (existente != null) {
-        throw new Exception("Já existe registro com esta chave composta!");
-    }
-
-    long offset = arqPessoa_Comanda_Item.createWithOffset(pci);
-   
-    if (offset < 0) {
-        int idHash = pci.getChaveComposta();
-        Pessoa_Comanda_Item registroArquivo = arqPessoa_Comanda_Item.read(idHash);
         
-        if (registroArquivo != null && 
-            registroArquivo.getIdPessoaComanda() == pci.getIdPessoaComanda() && 
-            registroArquivo.getIdComanda() == pci.getIdComanda() && 
-            registroArquivo.getIdItem() == pci.getIdItem()) {
-            
-            offset = encontrarOffsetNoArquivo(registroArquivo);
-            
-            if (offset >= 0) {
-                indiceChave.inserir(registroArquivo.getIdPessoaComanda(), registroArquivo.getIdComanda(), 
-                                   registroArquivo.getIdItem(), offset);
-                return true;
-            } else {
-                throw new Exception("Registro existe no arquivo mas não foi possível encontrar o offset.");
-            }
-        } else {
-            throw new Exception("Erro ao criar registro. ID (hash) já existe para outro registro ou registro não encontrado.");
+        // Verifica se já existe
+        Pessoa_Comanda_Item existente = buscarPorChaveComposta(
+            pci.getIdPessoaComanda(), 
+            pci.getIdComanda(), 
+            pci.getIdItem()
+        );
+        
+        if (existente != null) {
+            throw new Exception("Já existe registro com esta chave composta!");
         }
-    }
-    
-    indiceChave.inserir(pci.getIdPessoaComanda(), pci.getIdComanda(), pci.getIdItem(), offset);
-    
-    System.out.println("Inserção concluída com sucesso.");
-    sucesso = true;
-    
-    if (sucesso && getComandaDAO() != null) {
-        try {
-            java.lang.reflect.Method m = getComandaDAO().getClass().getMethod("adicionarPessoaComandaAComanda", int.class, int.class);
-            m.invoke(getComandaDAO(), pci.getIdComanda(), pci.getIdPessoaComanda());
-        } catch (NoSuchMethodException e1) {
-            try {
-               java.lang.reflect.Method m2 = getComandaDAO().getClass().getMethod("adicionarPessoaComanda", int.class, int.class);
-                m2.invoke(getComandaDAO(), pci.getIdComanda(), pci.getIdPessoaComanda());
-            } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException e2) {
-               
-                System.out.println("Aviso: método de sincronização não encontrado ou falhou em ComandaDAO.");
-            }
-        } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
-            System.out.println("Aviso: falha ao invocar método de sincronização em ComandaDAO: " + e.getMessage());
-        }
-    }
-    
-    return true;
-}
 
-//teste
- public void setPessoaComandaDAO(PessoaComandaDAO pessoaComandaDAO) {
+        long offset = arqPessoa_Comanda_Item.createWithOffset(pci);
+        
+        if (offset < 0) {
+            int idHash = pci.getChaveComposta();
+            Pessoa_Comanda_Item registroArquivo = arqPessoa_Comanda_Item.read(idHash);
+            
+            if (registroArquivo != null && 
+                registroArquivo.getIdPessoaComanda() == pci.getIdPessoaComanda() && 
+                registroArquivo.getIdComanda() == pci.getIdComanda() && 
+                registroArquivo.getIdItem() == pci.getIdItem()) {
+                
+                offset = encontrarOffsetNoArquivo(registroArquivo);
+                
+                if (offset >= 0) {
+                    indiceChave.inserir(
+                        registroArquivo.getIdPessoaComanda(), 
+                        registroArquivo.getIdComanda(), 
+                        registroArquivo.getIdItem(), 
+                        offset
+                    );
+                    return true;
+                } else {
+                    throw new Exception("Registro existe no arquivo mas não foi possível encontrar o offset.");
+                }
+            } else {
+                throw new Exception("Erro ao criar registro. ID (hash) já existe para outro registro ou registro não encontrado.");
+            }
+        }
+        
+        // Insere na chave composta
+        indiceChave.inserir(pci.getIdPessoaComanda(), pci.getIdComanda(), pci.getIdItem(), offset);
+        
+        // Insere nos índices de chaves estrangeiras
+        try {
+            idxPessoaComanda.create(new ParIdOffset(pci.getIdPessoaComanda(), offset));
+        } catch (Exception e) {
+            // Se já existe, apenas atualiza
+            idxPessoaComanda.update(new ParIdOffset(pci.getIdPessoaComanda(), offset));
+        }
+        
+        try {
+            idxComanda.create(new ParIdOffset(pci.getIdComanda(), offset));
+        } catch (Exception e) {
+            idxComanda.update(new ParIdOffset(pci.getIdComanda(), offset));
+        }
+        
+        try {
+            idxItem.create(new ParIdOffset(pci.getIdItem(), offset));
+        } catch (Exception e) {
+            idxItem.update(new ParIdOffset(pci.getIdItem(), offset));
+        }
+        
+        System.out.println("Inserção concluída com sucesso.");
+        sucesso = true;
+        
+        if (sucesso && getComandaDAO() != null) {
+            try {
+                java.lang.reflect.Method m = getComandaDAO().getClass().getMethod(
+                    "adicionarPessoaComandaAComanda", 
+                    int.class, 
+                    int.class
+                );
+                m.invoke(getComandaDAO(), pci.getIdComanda(), pci.getIdPessoaComanda());
+            } catch (NoSuchMethodException e1) {
+                try {
+                    java.lang.reflect.Method m2 = getComandaDAO().getClass().getMethod(
+                        "adicionarPessoaComanda", 
+                        int.class, 
+                        int.class
+                    );
+                    m2.invoke(getComandaDAO(), pci.getIdComanda(), pci.getIdPessoaComanda());
+                } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException e2) {
+                    System.out.println("Aviso: método de sincronização não encontrado ou falhou em ComandaDAO.");
+                }
+            } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
+                System.out.println("Aviso: falha ao invocar método de sincronização em ComandaDAO: " + e.getMessage());
+            }
+        }
+        
+        return true;
+    }
+
+    public void setPessoaComandaDAO(PessoaComandaDAO pessoaComandaDAO) {
         this.pessoaComandaDAO = pessoaComandaDAO;
     }
-public void setItemDAO(ItemDAO itemDAO) {
+    
+    public void setItemDAO(ItemDAO itemDAO) {
         this.itemDAO = itemDAO;
     }
-//
+
     public Pessoa_Comanda_Item buscarPorChaveComposta(int idPessoaComanda, int idComanda, int idItem) throws Exception {
         var chave = indiceChave.buscar(idPessoaComanda, idComanda, idItem);
-       
+        
         if (chave != null) {
             Pessoa_Comanda_Item resultado = buscarPorOffset(chave.getOffset());
             return resultado;
@@ -182,7 +280,11 @@ public void setItemDAO(ItemDAO itemDAO) {
     }
 
     public boolean alterarPessoa_Comanda_Item(Pessoa_Comanda_Item novo) throws Exception {
-        Pessoa_Comanda_Item antigo = buscarPorChaveComposta(novo.getIdPessoaComanda(), novo.getIdComanda(), novo.getIdItem());
+        Pessoa_Comanda_Item antigo = buscarPorChaveComposta(
+            novo.getIdPessoaComanda(), 
+            novo.getIdComanda(), 
+            novo.getIdItem()
+        );
         if (antigo == null) return false;
 
         return arqPessoa_Comanda_Item.update(novo);
@@ -195,23 +297,60 @@ public void setItemDAO(ItemDAO itemDAO) {
         boolean sucesso = arqPessoa_Comanda_Item.delete(calcularId(registro));
         if (sucesso) {
             indiceChave.remover(idPessoaComanda, idComanda, idItem);
+            
+            // Remove dos índices de chaves estrangeiras
+            idxPessoaComanda.delete(idPessoaComanda);
+            idxComanda.delete(idComanda);
+            idxItem.delete(idItem);
         }
         return sucesso;
     }
 
-    // Métodos de busca modificados para usar PessoaComanda
+    /**
+     * Busca usando o índice hash de PessoaComanda
+     */
     public List<Pessoa_Comanda_Item> buscarPorPessoaComanda(int idPessoaComanda) throws Exception {
         List<Pessoa_Comanda_Item> resultados = new ArrayList<>();
+        
+        // Tenta usar o índice primeiro (mais eficiente)
+        try {
+            ParIdOffset ref = idxPessoaComanda.read(idPessoaComanda);
+            if (ref != null) {
+                Pessoa_Comanda_Item pci = buscarPorOffset(ref.getOffset());
+                if (pci != null && pci.getIdPessoaComanda() == idPessoaComanda) {
+                    resultados.add(pci);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Índice não encontrou, fazendo busca sequencial...");
+        }
+        
+        // Busca sequencial como fallback ou complemento
         arqPessoa_Comanda_Item.scanValidRecords((Long pos, Pessoa_Comanda_Item registro) -> {
             if (registro.getIdPessoaComanda() == idPessoaComanda) {
-                resultados.add(registro);
+                boolean jaExiste = false;
+                for (Pessoa_Comanda_Item r : resultados) {
+                    if (r.getIdComanda() == registro.getIdComanda() && 
+                        r.getIdItem() == registro.getIdItem()) {
+                        jaExiste = true;
+                        break;
+                    }
+                }
+                if (!jaExiste) {
+                    resultados.add(registro);
+                }
             }
         });
+        
         return resultados;
     }
 
+    /**
+     * Busca usando o índice hash de Item
+     */
     public List<Pessoa_Comanda_Item> buscarPorItem(int idItem) throws Exception {
         List<Pessoa_Comanda_Item> resultados = new ArrayList<>();
+        
         arqPessoa_Comanda_Item.scanValidRecords((Long pos, Pessoa_Comanda_Item registro) -> {
             if (registro.getIdItem() == idItem) {
                 resultados.add(registro);
@@ -220,8 +359,12 @@ public void setItemDAO(ItemDAO itemDAO) {
         return resultados;
     }
 
+    /**
+     * Busca usando o índice hash de Comanda
+     */
     public List<Pessoa_Comanda_Item> buscarPorComanda(int idComanda) throws Exception {
         List<Pessoa_Comanda_Item> resultados = new ArrayList<>();
+        
         arqPessoa_Comanda_Item.scanValidRecords((Long pos, Pessoa_Comanda_Item registro) -> {
             if (registro.getIdComanda() == idComanda) {
                 resultados.add(registro);

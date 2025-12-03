@@ -11,20 +11,19 @@ public class PessoaComanda implements Registro {
     private int id;
     private String nome;
     private int idComanda;   
-    private double consumoPessoa;
+   // private double consumoPessoa; // consumo individual já ta em pessoa_comanda_item que relciona pessoa+ item
 
     public PessoaComanda() {
         this.id = -1;
         this.nome = "";
         this.idComanda = -1;
-        this.consumoPessoa = 0.0;
+       // this.consumoPessoa = 0.0;
     }
 
-    public PessoaComanda(int id, String nome, int idComanda,  double consumoPessoa) {
+    public PessoaComanda(int id, String nome, int idComanda) {
         this.id = id;
         this.nome = nome;
         this.idComanda = idComanda;
-        this.consumoPessoa = consumoPessoa;
     }
 
     public int getId() {
@@ -53,13 +52,6 @@ public class PessoaComanda implements Registro {
 
     
 
-    public double getConsumoPessoa() {
-        return consumoPessoa;
-    }
-
-    public void setConsumoPessoa(double consumoPessoa) {
-        this.consumoPessoa = consumoPessoa;
-    }
 
     @Override
     public byte[] toByteArray() throws IOException {
@@ -70,7 +62,6 @@ public class PessoaComanda implements Registro {
         dos.writeUTF(nome);
         dos.writeInt(idComanda);
 
-        dos.writeDouble(consumoPessoa);
 
         return out.toByteArray();
     }
@@ -85,15 +76,13 @@ public class PessoaComanda implements Registro {
         idComanda = dis.readInt();
 
 
-        consumoPessoa = dis.readDouble();
     }
     @Override
     public PessoaComanda clone() {
         return new PessoaComanda(
             this.id,
             this.nome,
-            this.idComanda,
-            this.consumoPessoa
+            this.idComanda
         );
     }
 
@@ -101,8 +90,7 @@ public class PessoaComanda implements Registro {
     public String toString() {
         return "\nID: " + id +
                 "\nNome: " + nome +
-                "\nID Comanda: " + idComanda +
-                "\nConsumo: " + consumoPessoa;
+                "\nID Comanda: " + idComanda;
     }
 
     @Override

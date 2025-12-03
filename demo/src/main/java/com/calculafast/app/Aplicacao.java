@@ -57,6 +57,8 @@ public class Aplicacao {
         ItemDAO itemDAO = new ItemDAO();
         PagamentoDAO pagamentoDAO = new PagamentoDAO();
         Pessoa_Comanda_ItemDAO pciDAO = new Pessoa_Comanda_ItemDAO();
+        PessoaComandaDAO pessoaComandaDAO = new PessoaComandaDAO();
+
 /////////////pessoa
         //listar
         get("/pessoas", (req, res) -> {
@@ -264,6 +266,191 @@ get("/pessoa-comanda-item/item/:idItem", (req, res) -> {
     int idItem = Integer.parseInt(req.params("idItem"));
     List<Pessoa_Comanda_Item> resultados = pciDAO.buscarPorItem(idItem);
     return gson.toJson(resultados);
+});
+
+
+// Listar todas as PessoasComanda
+get("/pessoas-comanda", (req, res) -> {
+    res.type("application/json");
+    try {
+        List<PessoaComanda> lista = pessoaComandaDAO.listarPessoasComanda();
+        return gson.toJson(lista);
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao listar: " + e.getMessage()));
+    }
+});
+
+// Buscar PessoaComanda por ID
+get("/pessoas-comanda/:id", (req, res) -> {
+    res.type("application/json");
+    try {
+        int id = Integer.parseInt(req.params("id"));
+        PessoaComanda pc = pessoaComandaDAO.buscar(id);
+        if (pc != null) {
+            return gson.toJson(pc);
+        } else {
+            res.status(404);
+            return gson.toJson(Map.of("erro", "PessoaComanda não encontrada"));
+        }
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao buscar: " + e.getMessage()));
+    }
+});
+
+// Criar nova PessoaComanda
+post("/pessoas-comanda", (req, res) -> {
+    res.type("application/json");
+    try {
+        PessoaComanda pc = gson.fromJson(req.body(), PessoaComanda.class);
+        int id = pessoaComandaDAO.incluir(pc);
+        res.status(201);
+        return gson.toJson(Map.of(
+            "mensagem", "PessoaComanda criada com sucesso!",
+            "id", id
+        ));
+    } catch (Exception e) {
+        res.status(400);
+        return gson.toJson(Map.of("erro", "Erro ao criar: " + e.getMessage()));
+    }
+});
+
+// Atualizar PessoaComanda
+put("/pessoas-comanda/:id", (req, res) -> {
+    res.type("application/json");
+    try {
+        int id = Integer.parseInt(req.params("id"));
+        PessoaComanda pc = gson.fromJson(req.body(), PessoaComanda.class);
+        pc.setId(id);
+        
+        boolean ok = pessoaComandaDAO.atualizar(pc);
+        if (ok) {
+            return gson.toJson(Map.of("mensagem", "PessoaComanda atualizada com sucesso!"));
+        } else {
+            res.status(400);
+            return gson.toJson(Map.of("erro", "Erro ao atualizar PessoaComanda"));
+        }
+    } catch (Exception e) {
+        res.status(400);
+        return gson.toJson(Map.of("erro", "Erro: " + e.getMessage()));
+    }
+});
+
+// Excluir PessoaComanda
+delete("/pessoas-comanda/:id", (req, res) -> {
+    res.type("application/json");
+    try {
+        int id = Integer.parseInt(req.params("id"));
+        boolean ok = pessoaComandaDAO.excluir(id);
+        if (ok) {
+            return gson.toJson(Map.of("mensagem", "PessoaComanda excluída com sucesso!"));
+        } else {
+            res.status(400);
+            return gson.toJson(Map.of("erro", "Erro ao excluir PessoaComanda"));
+        }
+    } catch (Exception e) {
+        res.status(400);
+        return gson.toJson(Map.of("erro", "Erro: " + e.getMessage()));
+    }
+});
+
+// Buscar PessoasComanda por Comanda
+get("/pessoas-comanda/comanda/:idComanda", (req, res) -> {
+    res.type("application/json");
+    try {
+        int idComanda = Integer.parseInt(req.params("idComanda"));
+        List<PessoaComanda> resultados = pessoaComandaDAO.buscarPorComanda(idComanda);
+        return gson.toJson(resultados);
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao buscar: " + e.getMessage()));
+    }
+});
+
+// Adicionar item à PessoaComanda
+post("/pessoas-comanda/:idPessoaComanda/itens", (req, res) -> {
+    res.type("application/json");
+    try {
+        int idPessoaComanda = Integer.parseInt(req.params("idPessoaComanda"));
+        Map<String, Integer> dados = gson.fromJson(req.body(), Map.class);
+        
+        int idComanda = dados.get("idComanda");
+        int idItem = dados.get("idItem");
+        
+        boolean ok = pessoaComandaDAO.adicionarItemAPessoaComanda(idPessoaComanda, idComanda, idItem);
+        
+        if (ok) {
+            return gson.toJson(Map.of("mensagem", "Item adicionado à PessoaComanda com sucesso!"));
+        } else {
+            res.status(400);
+            return gson.toJson(Map.of("erro", "Erro ao adicionar item"));
+        }
+    } catch (Exception e) {
+        res.status(400);
+        return gson.toJson(Map.of("erro", "Erro: " + e.getMessage()));
+    }
+});
+
+// Remover item da PessoaComanda
+delete("/pessoas-comanda/:idPessoaComanda/itens/:idItem/comanda/:idComanda", (req, res) -> {
+    res.type("application/json");
+    try {
+        int idPessoaComanda = Integer.parseInt(req.params("idPessoaComanda"));
+        int idItem = Integer.parseInt(req.params("idItem"));
+        int idComanda = Integer.parseInt(req.params("idComanda"));
+        
+        boolean ok = pessoaComandaDAO.removerItemDaPessoaComanda(idPessoaComanda, idComanda, idItem);
+        
+        if (ok) {
+            return gson.toJson(Map.of("mensagem", "Item removido da PessoaComanda com sucesso!"));
+        } else {
+            res.status(400);
+            return gson.toJson(Map.of("erro", "Erro ao remover item"));
+        }
+    } catch (Exception e) {
+        res.status(400);
+        return gson.toJson(Map.of("erro", "Erro: " + e.getMessage()));
+    }
+});
+
+// Listar itens de uma PessoaComanda
+get("/pessoas-comanda/:idPessoaComanda/itens", (req, res) -> {
+    res.type("application/json");
+    try {
+        int idPessoaComanda = Integer.parseInt(req.params("idPessoaComanda"));
+        List<Integer> itens = pessoaComandaDAO.getItensCompradosPorPessoaComanda(idPessoaComanda);
+        return gson.toJson(itens);
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao listar itens: " + e.getMessage()));
+    }
+});
+
+// Listar relações completas de uma PessoaComanda
+get("/pessoas-comanda/:idPessoaComanda/relacoes", (req, res) -> {
+    res.type("application/json");
+    try {
+        int idPessoaComanda = Integer.parseInt(req.params("idPessoaComanda"));
+        List<Pessoa_Comanda_Item> relacoes = pessoaComandaDAO.getRelacoesDaPessoaComanda(idPessoaComanda);
+        return gson.toJson(relacoes);
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao listar relações: " + e.getMessage()));
+    }
+});
+
+// Calcular consumo total de uma PessoaComanda
+get("/pessoas-comanda/:idPessoaComanda/consumo-total", (req, res) -> {
+    res.type("application/json");
+    try {
+        int idPessoaComanda = Integer.parseInt(req.params("idPessoaComanda"));
+        double total = pessoaComandaDAO.calcularConsumoTotal(idPessoaComanda);
+        return gson.toJson(Map.of("consumoTotal", total));
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao calcular consumo: " + e.getMessage()));
+    }
 });
 
     }
