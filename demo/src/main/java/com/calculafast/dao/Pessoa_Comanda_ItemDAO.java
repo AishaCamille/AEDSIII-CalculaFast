@@ -111,7 +111,7 @@ public class Pessoa_Comanda_ItemDAO {
                 }
                 
             } catch (Exception e) {
-                System.err.println("Erro ao reconstruir índice: " + e.getMessage());
+               // System.err.println("Erro ao reconstruir índice: " + e.getMessage());
             }
         });
         
@@ -234,27 +234,15 @@ public class Pessoa_Comanda_ItemDAO {
         System.out.println("Inserção concluída com sucesso.");
         sucesso = true;
         
-        if (sucesso && getComandaDAO() != null) {
+        if (sucesso) {
             try {
-                java.lang.reflect.Method m = getComandaDAO().getClass().getMethod(
-                    "adicionarPessoaComandaAComanda", 
-                    int.class, 
-                    int.class
+                // Chama diretamente o método do ComandaDAO
+                getComandaDAO().adicionarPessoaComandaAComanda(
+                    pci.getIdComanda(), 
+                    pci.getIdPessoaComanda()
                 );
-                m.invoke(getComandaDAO(), pci.getIdComanda(), pci.getIdPessoaComanda());
-            } catch (NoSuchMethodException e1) {
-                try {
-                    java.lang.reflect.Method m2 = getComandaDAO().getClass().getMethod(
-                        "adicionarPessoaComanda", 
-                        int.class, 
-                        int.class
-                    );
-                    m2.invoke(getComandaDAO(), pci.getIdComanda(), pci.getIdPessoaComanda());
-                } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException e2) {
-                    System.out.println("Aviso: método de sincronização não encontrado ou falhou em ComandaDAO.");
-                }
-            } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
-                System.out.println("Aviso: falha ao invocar método de sincronização em ComandaDAO: " + e.getMessage());
+            } catch (Exception e) {
+                System.out.println("Aviso leve: Erro ao sincronizar com ComandaDAO (Pode ser ignorado se a pessoa já estiver na lista): " + e.getMessage());
             }
         }
         

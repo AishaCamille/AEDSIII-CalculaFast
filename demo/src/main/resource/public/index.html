@@ -14,7 +14,6 @@
     <script>
         const API_URL = 'http://localhost:4567';
 
-        // Verifica se está logado ao carregar a página
         window.addEventListener('DOMContentLoaded', function() {
             const usuarioLogado = localStorage.getItem('usuarioLogado');
             if (!usuarioLogado) {
@@ -121,7 +120,7 @@
         }
 
         async function abrirNovaComanda() {
-            // 1. Validar Usuário Logado
+           
             const usuarioJson = localStorage.getItem('usuarioLogado');
             if (!usuarioJson) {
                 alert("Você precisa fazer login para abrir uma comanda!");
@@ -131,8 +130,6 @@
             const usuario = JSON.parse(usuarioJson);
 
             try {
-                // 2. Criar a Comanda (POST /comandas)
-                // O objeto segue o seu modelo Comanda.java
                 const novaComanda = {
                     idPessoa: usuario.id, // O dono da comanda
                     status: "ABERTA",
@@ -147,12 +144,9 @@
 
                 if (!resComanda.ok) throw new Error("Falha ao criar comanda.");
                 
-                // AQUI PRECISA DO JSON COM O ID QUE O JAVA GEROU
                 const comandaCriada = await resComanda.json(); 
                 const idComanda = comandaCriada.id; 
 
-                // 3. Adicionar o Usuário como participante (POST /pessoas-comanda)
-                // O objeto segue o modelo PessoaComanda.java
                 const pessoaComanda = {
                     nome: usuario.nome,
                     idComanda: idComanda
@@ -168,15 +162,13 @@
                     console.warn("Comanda criada, mas erro ao adicionar usuário como participante.");
                 }
 
-                // 4. Salvar ID e Redirecionar
                 localStorage.setItem('idComandaAtiva', idComanda);
                 window.location.href = "pessoas.html";
 
             } catch (error) {
                 console.error(error);
-                alert("Erro ao processar: " + error.message);
-                // Dica: Se der erro de JSON token, verifique se o Java está retornando gson.toJson(c)
-            }
+                console.log("Erro ao processar: " + error.message);
+             }
         }
 
         function compartilharNoWhatsApp() {

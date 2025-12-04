@@ -1,4 +1,5 @@
 package com.calculafast.app;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +59,14 @@ public class Aplicacao {
         PagamentoDAO pagamentoDAO = new PagamentoDAO();
         Pessoa_Comanda_ItemDAO pciDAO = new Pessoa_Comanda_ItemDAO();
         PessoaComandaDAO pessoaComandaDAO = new PessoaComandaDAO();
+
+        pciDAO.setComandaDAO(comandaDAO);
+    pciDAO.setPessoaComandaDAO(pessoaComandaDAO);
+    pciDAO.setItemDAO(itemDAO);
+
+    pciDAO.setComandaDAO(comandaDAO);
+    pciDAO.setPessoaComandaDAO(pessoaComandaDAO);
+    pciDAO.setItemDAO(itemDAO);
 
 /////////////pessoa
         //listar
@@ -138,6 +147,37 @@ public class Aplicacao {
             if(ok) return "Comanda excluída!";
             return "Erro ao excluir!";
         });
+
+        //objetos pessoacomanda
+       get("/comandas/:id/pessoas-detalhadas", (req, res) -> {
+    res.type("application/json");
+    try {
+        int idComanda = Integer.parseInt(req.params("id"));
+        
+        // Verificação de segurança
+        if (comandaDAO == null) throw new Exception("comandaDAO está nulo!");
+        
+        // Pega os IDs
+        List<Integer> idsPessoas = comandaDAO.getPessoasComandasDaComanda(idComanda);
+        
+        // Converte IDs em Objetos
+        List<PessoaComanda> pessoasDetalhadas = new ArrayList<>();
+        for (Integer idPessoa : idsPessoas) {
+            PessoaComanda p = pessoaComandaDAO.buscar(idPessoa);
+            if (p != null) {
+                pessoasDetalhadas.add(p);
+            }
+        }
+        
+        return gson.toJson(pessoasDetalhadas);
+
+    } catch (Exception e) {
+        e.printStackTrace(); 
+        
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro no Java: " + e.getMessage()));
+    }
+});
         
         ///////////////item
         //criar
@@ -262,38 +302,34 @@ public class Aplicacao {
 
         // Criar (incluir) PESSOA COMANDA ITEM
 post("/pessoa-comanda-item", (req, res) -> {
-    res.type("application/json"); // Garante resposta JSON
+    res.type("application/json"); 
     try {
-        // 1. Recebe os dados brutos como Map para flexibilidade
         Map<String, Object> body = gson.fromJson(req.body(), Map.class);
         
-        // Converte os IDs (Gson lê números como Double, então convertemos para int)
+        // Converte os IDs
         int idPessoaComanda = ((Double) body.get("idPessoaComanda")).intValue();
         int idComanda = ((Double) body.get("idComanda")).intValue();
         int idItem = ((Double) body.get("idItem")).intValue();
         
-        // Se você tiver campo quantidade no futuro, pegaria aqui:
-        // int qtd = body.containsKey("quantidade") ? ((Double) body.get("quantidade")).intValue() : 1;
+        int qtd = body.containsKey("quantidade") ? ((Double) body.get("quantidade")).intValue() : 1;
 
         // 2. Verifica se JÁ EXISTE no banco
         Pessoa_Comanda_Item existente = pciDAO.buscarPorChaveComposta(idPessoaComanda, idComanda, idItem);
 
         if (existente != null) {
-            // CENÁRIO A: JÁ EXISTE -> Retorna sucesso sem fazer nada (evita o erro de chave duplicada)
-            // Se seu model tiver .setQuantidade(), aqui seria a hora de somar e chamar pciDAO.alterar()
-            res.status(200); 
+             res.status(200); 
             return gson.toJson(Map.of(
                 "mensagem", "Item já estava na comanda desta pessoa. (Quantidade mantida)",
                 "status", "existente"
             ));
         }
 
-        // CENÁRIO B: NÃO EXISTE -> Cria novo
+        //Cria novo
         Pessoa_Comanda_Item novo = new Pessoa_Comanda_Item();
         novo.setIdPessoaComanda(idPessoaComanda);
         novo.setIdComanda(idComanda);
         novo.setIdItem(idItem);
-        // novo.setQuantidade(qtd); // Descomente se seu model tiver esse método
+        novo.setQuantidade(qtd); 
 
         pciDAO.incluirPessoa_Comanda_Item(novo);
         

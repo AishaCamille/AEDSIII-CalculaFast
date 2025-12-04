@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalculaFast - Fechamento</title>
+    <link rel="icon" href="./assets/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="segundaPagina.css">
+    
+    <style>
+        /* Fundo escuro (Overlay) */
+        .modal {
+            display: none; /* Escondido por padrão */
+            position: fixed; 
+            z-index: 1000; /* Fica acima de tudo */
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.5); /* Preto com transparência */
+        }
+
+        /* Conteúdo Branco do Modal */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; /* 10% do topo e centralizado */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%; 
+            max-width: 600px; /* Largura máxima */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+            animation: animatetop 0.4s;
+        }
+
+        /* Animação de descida */
+        @keyframes animatetop {
+            from {top: -300px; opacity: 0}
+            to {top: 0; opacity: 1}
+        }
+
+        /* Botão de Fechar (X) */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        /* Tabela dentro do modal */
+        .tabela-modal th, .tabela-modal td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+ 
+    <div id="container">
+        <div id="detalhesComanda">
+            <h2 id="tituloComanda">Carregando Comanda...</h2>
+            
+            <div class="total-info">
+                <div id="valorTotal">
+                    <strong>Valor Total: </strong><span id="valorTotalSpan">R$ 0.00</span>
+                </div>
+                <div id="valorTotalComGarcom">
+                    <strong>Valor Total com 10%: </strong><span id="valorTotalComGarcomSpan">R$ 0.00</span>
+                </div>
+            </div>
+            
+            <h3>Consumo por Pessoa (Clique no nome para ver itens)</h3>
+            <ul id="consumoPorPessoa">
+                <li>Carregando dados...</li>
+            </ul>
+        </div>
+        
+        <button class="btn-voltar" onclick="voltarParaPaginaAnterior()">Voltar para a Página Anterior</button>
+        <button onclick="finalizarComanda()">Finalizar Comanda</button>
+    </div>
+
+    <div id="modalContainer"></div>
+
+    <script>
+        const API_URL = 'http://localhost:4567'; 
+
+        // Variável global
+        let DADOS_COMANDA = {
+            pessoas: [], 
+            totalGeral: 0
+        };
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const idComanda = localStorage.getItem('idComandaAtiva');
+            
+            if(!idComanda) {
+                console.log("Nenhuma comanda selecionada.");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('tituloComanda').textContent = `Detalhes da Comanda #${idComanda}`;
+            carregarDadosDoBanco(idComanda);
+        });
+
+        function voltarParaPaginaAnterior() {
+            window.location.href = 'produtos.html';
+        }
+
+        // --- LÓGICA PRINCIPAL ---
+        async function carregarDadosDoBanco(idComanda) {
+            try {
+                const resPessoas = await fetch(`${API_URL}/comandas/${idComanda}/pessoas-detalhadas`);
+                const listaPessoas = await resPessoas.json();
+
+                if (listaPessoas.erro) throw new Error("Erro do Servidor: " + listaPessoas.erro);
+                if (!Array.isArray(listaPessoas)) throw new Error("Resposta inválida do servidor.");
+
+                const resRelacoes = await fetch(`${API_URL}/pessoa-comanda-item/comanda/${idComanda}`);
+                const listaRelacoes = await resRelacoes.json();
+
+                const resItens = await fetch(`${API_URL}/itens`);
+                const todosItens = await resItens.json();
+
+                const mapaItens = {};
+                todosItens.forEach(item => mapaItens[item.id] = item);
+
+                let totalComanda = 0;
+                const pessoasProcessadas = [];
+
+                listaPessoas.forEach(pessoa => {
+                    let totalPessoa = 0;
+                    const itensConsumidos = [];
+
+                    const relacoesDestaPessoa = listaRelacoes.filter(r => r.idPessoaComanda === pessoa.id);
+
+                    relacoesDestaPessoa.forEach(rel => {
+                        const itemCompleto = mapaItens[rel.idItem];
+                        if (itemCompleto) {
+                            totalPessoa += itemCompleto.valor;
+                            itensConsumidos.push({
+                                nome: itemCompleto.descricao,
+                                valor: itemCompleto.valor
+                            });
+                        }
+                    });
+
+                    totalComanda += totalPessoa;
+
+                    pessoasProcessadas.push({
+                        id: pessoa.id,
+                        nome: pessoa.nome,
+                        total: totalPessoa,
+                        itens: itensConsumidos
+                    });
+                });
+
+                DADOS_COMANDA.pessoas = pessoasProcessadas;
+                DADOS_COMANDA.totalGeral = totalComanda;
+
+                renderizarTela();
+
+            } catch (erro) {
+                console.error(erro);
+                document.getElementById('consumoPorPessoa').innerHTML = `<li style="color:red">Erro ao carregar dados: ${erro.message}</li>`;
+            }
+        }
+
+        function renderizarTela() {
+            const total = DADOS_COMANDA.totalGeral;
+            document.getElementById("valorTotalSpan").textContent = `R$ ${total.toFixed(2)}`;
+            document.getElementById("valorTotalComGarcomSpan").textContent = `R$ ${(total * 1.10).toFixed(2)}`;
+
+            const listaUl = document.getElementById("consumoPorPessoa");
+            listaUl.innerHTML = '';
+
+            if (DADOS_COMANDA.pessoas.length === 0) {
+                listaUl.innerHTML = '<li>Ninguém adicionado a esta comanda ainda.</li>';
+                return;
+            }
+
+            DADOS_COMANDA.pessoas.forEach(p => {
+                const valorComGarcom = p.total * 1.10;
+                
+                const li = document.createElement("li");
+                
+                let btnHtml = '';
+                if (p.total > 0) {
+                    btnHtml = `<button class="btn-pagar" onclick="simularPagamento(this)">Registrar Pagamento</button>`;
+                }
+
+                // Adicionei style="cursor:pointer" para indicar clique
+                li.innerHTML = `
+                    <span class="nome" style="cursor:pointer; color: blue; text-decoration: underline;" onclick="abrirModalItens(${p.id})">${p.nome}</span>
+                    <span class="valor">R$ ${valorComGarcom.toFixed(2)}</span>
+                    ${btnHtml}
+                `;
+                
+                listaUl.appendChild(li);
+            });
+        }
+
+        // --- MODAL DE DETALHES ---
+        function abrirModalItens(idPessoa) {
+            const pessoa = DADOS_COMANDA.pessoas.find(p => p.id === idPessoa);
+            if (!pessoa) return;
+
+            const resumoItens = {};
+            pessoa.itens.forEach(item => {
+                if (resumoItens[item.nome]) {
+                    resumoItens[item.nome].qtd++;
+                    resumoItens[item.nome].total += item.valor;
+                } else {
+                    resumoItens[item.nome] = {
+                        qtd: 1,
+                        valorUnit: item.valor,
+                        total: item.valor
+                    };
+                }
+            });
+
+            let linhas = '';
+            if (Object.keys(resumoItens).length === 0) {
+                linhas = '<tr><td colspan="4">Nenhum consumo registrado.</td></tr>';
+            } else {
+                for (const [nome, dados] of Object.entries(resumoItens)) {
+                    linhas += `
+                        <tr>
+                            <td>${nome}</td>
+                            <td style="text-align:center">${dados.qtd}</td>
+                            <td>R$ ${dados.valorUnit.toFixed(2)}</td>
+                            <td>R$ ${dados.total.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+            }
+
+            // AQUI ESTAVA O PROBLEMA: Faltava estrutura CSS
+            // O modal agora tem classes que combinam com o CSS lá em cima
+            const modalHTML = `
+                <div id="modalItens" class="modal" style="display: block;">
+                    <div class="modal-content">
+                        <span class="close" onclick="document.getElementById('modalItens').remove()">&times;</span>
+                        <h2>Consumo de ${pessoa.nome}</h2>
+                        <table class="tabela-modal" style="width:100%; border-collapse: collapse; margin-top:10px;">
+                            <thead>
+                                <tr style="background:#eee; text-align:left;">
+                                    <th>Item</th>
+                                    <th style="text-align:center">Qtd</th>
+                                    <th>Unit.</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>${linhas}</tbody>
+                        </table>
+                        <div style="margin-top: 15px; text-align: right; font-size: 1.2em;">
+                            Total: <strong>R$ ${pessoa.total.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContainer').innerHTML = modalHTML;
+        }
+
+        async function finalizarComanda() {
+            if(!confirm("Deseja realmente fechar esta comanda?")) return;
+            
+            const idComanda = localStorage.getItem('idComandaAtiva');
+            try {
+                const comandaUpdate = {
+                    id: parseInt(idComanda),
+                    status: "FECHADA",
+                    idPessoa: 1, 
+                    consumoPessoa: DADOS_COMANDA.totalGeral
+                };
+
+                await fetch(`${API_URL}/comandas/${idComanda}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(comandaUpdate)
+                });
+
+                console.log("Comanda Fechada com Sucesso!");
+                localStorage.removeItem('idComandaAtiva');
+                window.location.href = 'index.html';
+
+            } catch (e) {
+                console.log("Erro ao fechar: " + e.message);
+            }
+        }
+
+        function simularPagamento(btn) {
+            btn.parentElement.innerHTML += '<span style="color:green; font-weight:bold; margin-left:10px;">✅ Pago</span>';
+            btn.remove();
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalItens');
+            if (event.target === modal) modal.remove();
+        }
+    </script>
+</body>
+</html>

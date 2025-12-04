@@ -174,13 +174,13 @@
 
             // Validação
             if (!nome || isNaN(valor)) {
-                alert("Preencha nome e valor corretamente.");
+                console.log("Preencha nome e valor corretamente.");
                 return;
             }
 
             const checkboxes = document.querySelectorAll('.chk-pessoa:checked');
             if (checkboxes.length === 0) {
-                alert("Selecione pelo menos uma pessoa para consumir o item.");
+                console.log("Selecione pelo menos uma pessoa para consumir o item.");
                 return;
             }
 
@@ -250,7 +250,7 @@
 
                 await Promise.all(promises);
 
-                alert("Processo finalizado! Itens vinculados.");
+                console.log("Processo finalizado! Itens vinculados.");
                 
                 // Limpa a tela
                 carregarItensDoBanco(); 
@@ -266,7 +266,7 @@
 
             } catch (error) {
                 console.error(error);
-                alert("Ocorreu um erro: " + error.message);
+                console.log("Ocorreu um erro: " + error.message);
             }
         }
 
@@ -318,10 +318,10 @@
                     listarItensNoModal();
                     carregarItensDoBanco();
                 } else {
-                    alert("Erro ao excluir. Item pode estar vinculado a alguém.");
+                    console.log("Erro ao excluir. Item pode estar vinculado a alguém.");
                 }
             } catch (e) {
-                alert("Erro de conexão.");
+                console.log("Erro de conexão.");
             }
         }
 
