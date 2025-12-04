@@ -1,0 +1,446 @@
+body {
+	    background-image: url('assets/texturamesa2.jpg');
+	    background-color: #c7cbdd88;
+	    font-family: 'Arial', sans-serif;
+	    margin: 0;
+	    padding: 60px 0 20px 0;
+	    min-height: 100vh;
+	    box-sizing: border-box;
+	    overflow-x: hidden;
+	}
+
+		
+				/* Cabeçalho com faixa preta e logo */
+				#header {
+				    position: fixed;
+				    top: 0;
+				    left: 0;
+				    width: 100%;
+				    height: 60px;
+				    background-color: black;
+				    display: flex;
+				    align-items: center;
+				    padding-left: 20px;
+				    z-index: 10;
+				}
+		
+				#logo {
+				    height: 40px;
+				    width: auto;
+				}
+		
+				.container {
+				    background-color: #ffffffcc;
+				    padding: 30px;
+				    border-radius: 20px;
+				    box-shadow: 0 0 10px #00000033;
+				    max-width: 800px;
+				    margin: 0 auto;
+				}
+
+				.container::before {
+				    content: '';
+				    position: absolute;
+				    top: 0;
+				    left: 10px;
+				    right: 10px;
+				    height: 100%;
+				    opacity: 0.5;
+				    pointer-events: none;
+				}
+		
+				h1 {
+				    color: #f3bc09;
+				    margin-bottom: 30px;
+				    text-align: left;
+				}
+		
+				/* Estilos dos labels */
+				label {
+				    display: block;
+				    margin-bottom: 8px;
+				    font-size: 1rem;
+				    color: #333;
+				}
+		
+				/* Inputs de texto e número */
+				input[type="text"],
+				input[type="number"] {
+				    width: 100%;
+				    padding: 10px;
+				    margin-bottom: 20px;
+				    border: 1px solid #ccc;
+				    border-radius: 5px;
+				    box-sizing: border-box;
+				    font-size: 1rem;
+				    transition: border 0.3s ease;
+				}
+		
+				input[type="text"]:focus,
+				input[type="number"]:focus {
+				    border-color: #0047ff;
+				    outline: none;
+				}
+		
+				/* Botão de salvar */
+				button {
+				    width: 80%;
+				    padding: 12px;
+				    background-color: #000000;
+				    border: none;
+				    color: white;
+				    font-size: 1rem;
+				    font-weight: bold;
+				    border-radius: 5px;
+				    cursor: pointer;
+				    transition: background-color 0.3s ease;
+				    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+				    margin: 10px;
+				}
+		
+				button:hover {
+				    background-color: #ccbe00;
+				}
+		
+				/* Botão de câmera */
+				.botao-camera {
+				    width: 40px;
+				    height: 40px;
+				    border-radius: 50%;
+				    background-color: #070606;
+				    border: none;
+				    display: flex;
+				    align-items: center;
+				    justify-content: center;
+				    cursor: pointer;
+				    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+				    transition: background-color 0.3s ease;
+				    margin-bottom: 20px;
+				}
+		
+				.botao-camera:hover {
+				    background-color: #e4bc0b;
+				}
+		
+				.botao-camera img {
+				    height: 30px;
+				}
+		
+				/* Estilos responsivos */
+				@media (max-width: 600px) {
+				    .container {
+				        padding: 20px;
+				    }
+				    h1 {
+				        font-size: 1.5rem;
+				    }
+				    button {
+				        font-size: 0.9rem;
+				    }
+				}
+				/* Estilo do contêiner de checkboxes para alinhamento horizontal */
+				#pessoasCheckbox {
+				    display: block;
+				    flex-wrap: wrap; /* Permite que as checkboxes quebrem para uma nova linha em telas pequenas */
+				    gap: 60px; /* Espaçamento entre as checkboxes */
+				    justify-content: center; /* Centraliza o grupo de checkboxes */
+				    margin-bottom: 20px; /* Espaço entre o contêiner e os outros elementos */
+				}
+		
+				#pessoasCheckbox label {
+				    display: flex;
+				    align-items: center;
+				    margin: 0;
+				    font-size: 0.95rem;
+				}
+		
+				#pessoasCheckbox input[type="checkbox"] {
+				    margin-right: 5px; /* Espaço entre a checkbox e o texto do label */
+				}
+				/* Estilo para o modal de itens */
+				.modal {
+				    display: none;
+				    position: fixed;
+				    z-index: 100;
+				    left: 0;
+				    top: 0;
+				    width: 100%;
+				    height: 100%;
+				    background-color: rgba(0,0,0,0.7);
+				    overflow: auto;
+				}
+		
+				.modal-content {
+				    background-color: #fefefe;
+				    margin: 10% auto;
+				    padding: 20px;
+				    border: 1px solid #888;
+				    width: 80%;
+				    max-width: 600px;
+				    border-radius: 5px;
+				    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+				}
+		
+				.close {
+				    color: #aaa;
+				    float: right;
+				    font-size: 28px;
+				    font-weight: bold;
+				    cursor: pointer;
+				}
+		
+				.close:hover {
+				    color: black;
+				}
+		
+				/* Estilo para a tabela de itens */
+				.itens-table {
+				    width: 100%;
+				    border-collapse: collapse;
+				    margin-top: 20px;
+				}
+		
+				.itens-table th,
+				.itens-table td {
+				    padding: 8px;
+				    text-align: left;
+				    border-bottom: 1px solid #ddd;
+				}
+		
+				.itens-table th {
+				    background-color: #f2f2f2;
+				}
+		
+				.btn-excluir {
+				    background-color: #ff0000;
+				    color: white;
+				    border: none;
+				    border-radius: 3px;
+				    padding: 5px 10px;
+				    cursor: pointer;
+				    font-size: 14px;
+				    width: auto;
+				    margin: 0;
+				}
+		
+				.btn-excluir:hover {
+				    background-color: #cc0000;
+				}
+		
+				/* Botão "Ver Itens" */
+				.btn-ver-itens {
+				    background-color: black;
+				    width: 80%;
+				}
+		
+				.btn-ver-itens:hover {
+				    background-color: #ccbe00;
+				}
+		
+				/* Sem itens mensagem */
+				.sem-itens {
+				    text-align: center;
+				    padding: 20px;
+				    font-style: italic;
+				    color: #666;
+				}
+		
+				/*sobre a ia*/
+				.explicacao{
+					float: right;
+				}
+				.cordotextocam{
+					color: yellow;
+				}
+				.modal-content {
+				    max-height: 80vh;
+				    overflow-y: auto;
+				}
+
+				.itens-table {
+				    width: 100%;
+				    margin-top: 20px;
+				}
+
+				.itens-table th {
+				    position: sticky;
+				    top: 0;
+				    background-color: #f2f2f2;
+				}
+
+				.btn-excluir {
+				    padding: 5px 10px;
+				    background-color: #ff4444;
+				    color: white;
+				    border: none;
+				    border-radius: 4px;
+				    cursor: pointer;
+				}
+
+				.btn-excluir:hover {
+				    background-color: #cc0000;
+				}
+				/*css do editar itens*/
+				
+				        .container {
+				            background: rgba(255, 255, 255, 0.95);
+				            backdrop-filter: blur(10px);
+				            border-radius: 20px;
+				            padding: 40px;
+				            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1);
+				            border: 1px solid rgba(255, 255, 255, 0.2);
+				            max-width: 500px;
+				            width: 100%;
+				        }
+
+				        .form-group {
+				            position: relative;
+				            margin-bottom: 30px;
+				        }
+
+				        .form-label {
+				            display: block;
+				            font-size: 16px;
+				            font-weight: 600;
+				            color: #2d3748;
+				            margin-bottom: 12px;
+				            text-transform: uppercase;
+				            letter-spacing: 0.5px;
+				            position: relative;
+				        }
+
+				        .form-label::after {
+				            content: '';
+				            position: absolute;
+				            bottom: -4px;
+				            left: 0;
+				            width: 60px;
+				            height: 3px;
+				          /*  background: linear-gradient(90deg, #667eea, #764ba2);
+				            */border-radius: 2px;
+				        }
+
+				        .select-wrapper {
+				            position: relative;
+				            display: inline-block;
+				            width: 100%;
+				        }
+
+				        .custom-select {
+				            appearance: none;
+				            -webkit-appearance: none;
+				            -moz-appearance: none;
+				            width: 100%;
+				            padding: 16px 50px 16px 20px;
+				            font-size: 16px;
+				            font-weight: 500;
+				            color: #2d3748;
+				            background: #ffffff;
+				            border: 2px solid yellow;
+				            border-radius: 12px;
+				            cursor: pointer;
+				            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+				            outline: none;
+				            position: relative;
+				            z-index: 1;
+				        }
+
+				        .custom-select:hover {
+				            border-color: black;
+				            transform: translateY(-2px);
+				            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.15);
+				        }
+
+				        .custom-select:focus {
+				            border-color: #667eea;
+				            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+				            transform: translateY(-2px);
+				        }
+
+				        .select-arrow {
+				            position: absolute;
+				            top: 50%;
+				            right: 20px;
+				            transform: translateY(-50%);
+				            pointer-events: none;
+				            transition: all 0.3s ease;
+				            z-index: 2;
+				        }
+
+				        .select-arrow svg {
+				            width: 20px;
+				            height: 20px;
+				            fill: #667eea;
+				            transition: all 0.3s ease;
+				        }
+
+				        .custom-select:focus + .select-arrow svg,
+				        .custom-select:hover + .select-arrow svg {
+				            transform: rotate(180deg);
+				            fill: #764ba2;
+				        }
+
+				        /* Animação de loading */
+				        .loading {
+				            display: inline-block;
+				            width: 20px;
+				            height: 20px;
+				            border: 3px solid #f3f3f3;
+				            border-top: 3px solid #667eea;
+				            border-radius: 50%;
+				            animation: spin 1s linear infinite;
+				            margin-left: 10px;
+				        }
+
+				        @keyframes spin {
+				            0% { transform: rotate(0deg); }
+				            100% { transform: rotate(360deg); }
+				        }
+
+				        /* Estilo para quando está carregando */
+				        .select-wrapper.loading .select-arrow {
+				            display: none;
+				        }
+
+				        /* Efeito ripple */
+				        .select-wrapper::before {
+				            content: '';
+				            position: absolute;
+				            top: 50%;
+				            left: 50%;
+				            width: 0;
+				            height: 0;
+				            border-radius: 50%;
+				            background: rgba(102, 126, 234, 0.1);
+				            transform: translate(-50%, -50%);
+				            transition: width 0.6s, height 0.6s;
+				            z-index: 0;
+				            pointer-events: none;
+				        }
+
+				        .select-wrapper:hover::before {
+				            width: 100%;
+				            height: 100%;
+				        }
+
+				        /* Responsivo */
+				        @media (max-width: 768px) {
+				            .container {
+				                padding: 30px 20px;
+				                margin: 10px;
+				            }
+				            
+				            .custom-select {
+				                padding: 14px 45px 14px 16px;
+				                font-Size: 14px;
+				            }
+				        }
+
+					    .botoes-centro {
+							display: flex;
+							flex-direction: column; 
+							align-items: center;
+							justify-content: center;
+							gap: 10px; 
+							margin-top: 20px;
+        				    }

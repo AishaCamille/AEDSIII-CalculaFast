@@ -42,7 +42,7 @@
             const alert = document.getElementById(elementId);
             alert.className = 'alert';
         }
-
+        
         async function handleCadastro(event) {
             event.preventDefault();
             
@@ -120,8 +120,63 @@
             location.reload();
         }
 
-        function abrirNovaComanda() {
-            window.location.href = "pessoas.html";  
+        async function abrirNovaComanda() {
+            // 1. Validar Usuário Logado
+            const usuarioJson = localStorage.getItem('usuarioLogado');
+            if (!usuarioJson) {
+                alert("Você precisa fazer login para abrir uma comanda!");
+                document.getElementById('modalLogin').classList.add('show');
+                return;
+            }
+            const usuario = JSON.parse(usuarioJson);
+
+            try {
+                // 2. Criar a Comanda (POST /comandas)
+                // O objeto segue o seu modelo Comanda.java
+                const novaComanda = {
+                    idPessoa: usuario.id, // O dono da comanda
+                    status: "ABERTA",
+                    consumoPessoa: 0.0
+                };
+
+                const resComanda = await fetch(`${API_URL}/comandas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novaComanda)
+                });
+
+                if (!resComanda.ok) throw new Error("Falha ao criar comanda.");
+                
+                // AQUI PRECISA DO JSON COM O ID QUE O JAVA GEROU
+                const comandaCriada = await resComanda.json(); 
+                const idComanda = comandaCriada.id; 
+
+                // 3. Adicionar o Usuário como participante (POST /pessoas-comanda)
+                // O objeto segue o modelo PessoaComanda.java
+                const pessoaComanda = {
+                    nome: usuario.nome,
+                    idComanda: idComanda
+                };
+
+                const resParticipante = await fetch(`${API_URL}/pessoas-comanda`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pessoaComanda)
+                });
+
+                if (!resParticipante.ok) {
+                    console.warn("Comanda criada, mas erro ao adicionar usuário como participante.");
+                }
+
+                // 4. Salvar ID e Redirecionar
+                localStorage.setItem('idComandaAtiva', idComanda);
+                window.location.href = "pessoas.html";
+
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao processar: " + error.message);
+                // Dica: Se der erro de JSON token, verifique se o Java está retornando gson.toJson(c)
+            }
         }
 
         function compartilharNoWhatsApp() {

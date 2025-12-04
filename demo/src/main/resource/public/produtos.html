@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalculaFast - Adicionar Produtos</title>
+    <link rel="icon" href="./assets/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="produtos.css">
+</head>
+
+<body>
+    <div id="header">
+        <img src="./assets/outraOUTRa.png" alt="Logo" id="logo">
+    </div>
+
+    <div class="container">
+        <h1>Comanda #<span id="displayIdComanda"></span></h1>
+
+        <div class="form-group">
+            <label for="selecionarItem" class="form-label">
+                Selecione um item existente ou cadastre novo
+            </label>
+            <div class="select-wrapper">
+                <select id="selecionarItem" class="custom-select" onchange="carregarItemSelecionado()">
+                    <option value="">-- Novo Item --</option>
+                </select>
+                <div class="select-arrow">
+                    <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
+                </div>
+            </div>
+        </div>
+
+        <label for="nomeProduto">Nome do Produto:</label>
+        <input type="text" id="nomeProduto">
+
+        <label for="valorProduto">Valor Unitário (R$):</label>
+        <input type="number" id="valorProduto" step="0.01" placeholder="0.00">
+
+        <label for="quantidadeProduto">Quantidade Total (Estoque/Controle):</label>
+        <input type="number" id="quantidadeProduto" min="1" value="1">
+
+        <div id="pessoasCheckbox">
+            <p>Carregando pessoas da comanda...</p>
+        </div>
+
+        <div class="botoes-centro">
+            <button onclick="salvarProduto()">Salvar e Adicionar</button>
+            <button class="btn-ver-itens" onclick="abrirModalItens()">Gerenciar Itens (CRUD)</button>
+            <button class="btn-voltar" onclick="voltarParaPaginaAnterior()">Voltar</button>
+            <button class="btn-voltar" onclick="Continuar()">Finalizar</button>
+        </div>
+
+    </div>
+
+    <div id="modalItens" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModalItens()">&times;</span>
+            <h2>Gerenciar Itens do Banco</h2>
+            <div id="listaItens">Carregando...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:4567'; // Verifique se é 4567 ou 6789
+        
+        // Recupera o ID da Comanda ativa
+        let ID_COMANDA_ATUAL = localStorage.getItem('idComandaAtiva');
+
+        // --- INICIALIZAÇÃO ---
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!ID_COMANDA_ATUAL) {
+                alert("Nenhuma comanda ativa! Voltando para o início.");
+                window.location.href = 'index.html';
+                return;
+            }
+            document.getElementById('displayIdComanda').textContent = ID_COMANDA_ATUAL;
+            
+            carregarItensDoBanco(); 
+            carregarPessoasDaComanda(); 
+        });
+
+        function voltarParaPaginaAnterior() {
+            window.location.href = 'pessoas.html';
+        }
+
+        function Continuar() {
+            window.location.href = 'segundaPagina.html'; 
+        }
+
+        // --- 1. CARREGAR DADOS ---
+
+        let listaItensCache = [];
+
+        function carregarItensDoBanco() {
+            // Rota para buscar itens para o Select
+            fetch(`${API_URL}/itens`) 
+                .then(res => {
+                    if(!res.ok) return []; 
+                    return res.json();
+                })
+                .then(itens => {
+                    listaItensCache = itens;
+                    const select = document.getElementById('selecionarItem');
+                    select.innerHTML = '<option value="">-- Novo Item --</option>';
+                    
+                    itens.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.id;
+                        opt.textContent = `${item.descricao} - R$ ${item.valor}`;
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(err => console.log("Erro ao carregar itens (Verifique se a rota GET /itens existe):", err));
+        }
+
+        function carregarItemSelecionado() {
+            const idItem = document.getElementById('selecionarItem').value;
+            if (!idItem) {
+                // Modo Novo Item
+                document.getElementById('nomeProduto').value = "";
+                document.getElementById('valorProduto').value = "";
+                document.getElementById('quantidadeProduto').value = "1";
+                return;
+            }
+
+            const item = listaItensCache.find(i => i.id == idItem);
+            if (item) {
+                document.getElementById('nomeProduto').value = item.descricao;
+                document.getElementById('valorProduto').value = item.valor;
+                document.getElementById('quantidadeProduto').value = 1; 
+            }
+        }
+
+        function carregarPessoasDaComanda() {
+            // Busca as PessoasComanda vinculadas a esta comanda (Assume rota do passo anterior)
+            fetch(`${API_URL}/pessoas-comanda/comanda/${ID_COMANDA_ATUAL}`)
+                .then(res => res.json())
+                .then(pessoas => {
+                    const div = document.getElementById('pessoasCheckbox');
+                    if (pessoas.length === 0) {
+                        div.innerHTML = '<p style="color:red">Nenhuma pessoa nesta comanda.</p>';
+                        return;
+                    }
+
+                    let html = `<label>Quem vai consumir este item?</label>`;
+                    pessoas.forEach((p) => {
+                        html += `
+                        <div style="margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding: 5px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <input type="checkbox" class="chk-pessoa" id="chk_${p.id}" value="${p.id}">
+                                    <label for="chk_${p.id}" style="font-weight: bold;">${p.nome}</label>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                    div.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('pessoasCheckbox').innerHTML = "Erro ao carregar pessoas.";
+                });
+        }
+
+        // --- 2. SALVAR (CRIAR ITEM + VINCULAR) ---
+
+       async function salvarProduto() {
+            const idItemSelecionado = document.getElementById('selecionarItem').value;
+            const nome = document.getElementById('nomeProduto').value;
+            const valor = parseFloat(document.getElementById('valorProduto').value);
+            const quantidadeTotal = parseInt(document.getElementById('quantidadeProduto').value);
+
+            // Validação
+            if (!nome || isNaN(valor)) {
+                alert("Preencha nome e valor corretamente.");
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('.chk-pessoa:checked');
+            if (checkboxes.length === 0) {
+                alert("Selecione pelo menos uma pessoa para consumir o item.");
+                return;
+            }
+
+            let idItemFinal = idItemSelecionado;
+
+            try {
+                // --- PASSO A: CRIAR ITEM (Se for novo) ---
+                if (!idItemFinal) {
+                    const novoItem = {
+                        descricao: nome,
+                        valor: valor,
+                        quantidade: quantidadeTotal // Estoque geral
+                    };
+
+                    const res = await fetch(`${API_URL}/itens`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(novoItem)
+                    });
+
+                    if (!res.ok) throw new Error("Erro ao criar item no estoque.");
+                    
+                    // Tenta pegar o ID retornado
+                    try {
+                        const itemCriado = await res.json();
+                        idItemFinal = itemCriado.id || itemCriado.itemId;
+                    } catch (e) {
+                        // Fallback de segurança se o Java não retornar JSON
+                        const lista = await fetch(`${API_URL}/itens`).then(r => r.json());
+                        const ultimo = lista[lista.length - 1];
+                        if (ultimo) idItemFinal = ultimo.id;
+                    }
+                }
+
+                if (!idItemFinal) throw new Error("Falha ao identificar o ID do Item.");
+
+                // --- PASSO B: VINCULAR ITEM ÀS PESSOAS ---
+                
+                const promises = Array.from(checkboxes).map(chk => {
+                    const idPessoaComanda = parseInt(chk.value);
+                    
+                    // Pega a quantidade individual que você digitou na caixinha ao lado do nome
+                    const inputQtdIndividual = document.getElementById(`qtd_${idPessoaComanda}`);
+                    const qtdIndividual = inputQtdIndividual ? parseInt(inputQtdIndividual.value) : 1;
+
+                    const dadosAssociacao = {
+                        idPessoaComanda: idPessoaComanda,
+                        idComanda: parseInt(ID_COMANDA_ATUAL),
+                        idItem: parseInt(idItemFinal),
+                        quantidade: qtdIndividual // Envia a quantidade (o Java recebe, mesmo se não usar agora)
+                    };
+
+                    return fetch(`${API_URL}/pessoa-comanda-item`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dadosAssociacao)
+                    }).then(async res => {
+                        // Lê a resposta (seja JSON ou Texto) para não dar erro de sintaxe
+                        const text = await res.text();
+                        try {
+                            return JSON.parse(text); // Tenta converter pra objeto
+                        } catch {
+                            return { mensagem: text }; // Se for texto puro, embrulha num objeto
+                        }
+                    });
+                });
+
+                await Promise.all(promises);
+
+                alert("Processo finalizado! Itens vinculados.");
+                
+                // Limpa a tela
+                carregarItensDoBanco(); 
+                document.getElementById('selecionarItem').value = "";
+                document.getElementById('nomeProduto').value = "";
+                document.getElementById('valorProduto').value = "";
+                checkboxes.forEach(c => {
+                    c.checked = false;
+                    // Reseta a quantidade individual visualmente para 1
+                    const qtdInput = document.getElementById(`qtd_${c.value}`);
+                    if(qtdInput) qtdInput.value = 1;
+                });
+
+            } catch (error) {
+                console.error(error);
+                alert("Ocorreu um erro: " + error.message);
+            }
+        }
+
+        // --- 3. MODAL CRUD DE ITENS (Extra) ---
+
+        function abrirModalItens() {
+            document.getElementById('modalItens').style.display = 'block';
+            listarItensNoModal();
+        }
+
+        function fecharModalItens() {
+            document.getElementById('modalItens').style.display = 'none';
+        }
+
+        function listarItensNoModal() {
+            const div = document.getElementById('listaItens');
+            div.innerHTML = "Carregando...";
+
+            fetch(`${API_URL}/itens`)
+                .then(res => res.json())
+                .then(itens => {
+                    if (itens.length === 0) {
+                        div.innerHTML = "<p>Nenhum item cadastrado.</p>";
+                        return;
+                    }
+                    let html = `<table class="itens-table">
+                        <thead><tr><th>ID</th><th>Descrição</th><th>Valor</th><th>Ações</th></tr></thead><tbody>`;
+                    
+                    itens.forEach(i => {
+                        html += `<tr>
+                            <td>${i.id}</td>
+                            <td>${i.descricao}</td>
+                            <td>R$ ${i.valor}</td>
+                            <td><button onclick="deletarItem(${i.id})" style="background:red; color:white;">Excluir</button></td>
+                        </tr>`;
+                    });
+                    html += "</tbody></table>";
+                    div.innerHTML = html;
+                })
+                .catch(err => div.innerHTML = "Erro ao listar itens.");
+        }
+
+        async function deletarItem(id) {
+            if (!confirm("Tem certeza?")) return;
+            try {
+                // Chama a rota de DELETE /itens/:id
+                const res = await fetch(`${API_URL}/itens/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    listarItensNoModal();
+                    carregarItensDoBanco();
+                } else {
+                    alert("Erro ao excluir. Item pode estar vinculado a alguém.");
+                }
+            } catch (e) {
+                alert("Erro de conexão.");
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalItens');
+            if (event.target === modal) fecharModalItens();
+        }
+    </script>
+</body>
+</html>

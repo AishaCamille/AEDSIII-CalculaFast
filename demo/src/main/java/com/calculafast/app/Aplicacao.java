@@ -1,28 +1,28 @@
 package com.calculafast.app;
-import com.calculafast.dao.PessoaDAO;
-import com.calculafast.model.Pessoa;
-
-import com.calculafast.dao.ComandaDAO;
-import com.calculafast.model.Comanda;
-
-import com.calculafast.dao.ItemDAO;
-import com.calculafast.model.Item;
-
-import com.calculafast.dao.PagamentoDAO;
-import com.calculafast.model.Pagamento;
-
-import com.calculafast.dao.Pessoa_Comanda_ItemDAO;
-import com.calculafast.model.Pessoa_Comanda_Item;
-
-import com.calculafast.dao.PessoaComandaDAO;
-import com.calculafast.model.PessoaComanda;
-
-import com.google.gson.Gson;
-
-import static spark.Spark.*;
-
 import java.util.List;
 import java.util.Map;
+
+import com.calculafast.dao.ComandaDAO;
+import com.calculafast.dao.ItemDAO;
+import com.calculafast.dao.PagamentoDAO;
+import com.calculafast.dao.PessoaComandaDAO;
+import com.calculafast.dao.PessoaDAO;
+import com.calculafast.dao.Pessoa_Comanda_ItemDAO;
+import com.calculafast.model.Comanda;
+import com.calculafast.model.Item;
+import com.calculafast.model.Pagamento;
+import com.calculafast.model.Pessoa;
+import com.calculafast.model.PessoaComanda;
+import com.calculafast.model.Pessoa_Comanda_Item;
+import com.google.gson.Gson;
+
+import static spark.Spark.before;
+import static spark.Spark.delete;
+import static spark.Spark.get;
+import static spark.Spark.options;
+import static spark.Spark.port;
+import static spark.Spark.post;
+import static spark.Spark.put;
 
 public class Aplicacao {
     public static void main(String[] args) throws Exception {
@@ -112,11 +112,13 @@ public class Aplicacao {
 
         ///////////////comanda
         //criar
-        post("/comandas", (req, res) -> {
-            Comanda c = gson.fromJson(req.body(), Comanda.class);
-            comandaDAO.incluirComanda(c);
-            return "Comanda criada!";
-        });
+       post("/comandas", (req, res) -> {
+    res.type("application/json"); // 
+    Comanda c = gson.fromJson(req.body(), Comanda.class);
+    comandaDAO.incluirComanda(c);
+    
+    return gson.toJson(c); 
+});
          //atualizar
         put("/comandas/:id", (req, res) -> {
             int id = Integer.parseInt(req.params("id"));
@@ -139,29 +141,96 @@ public class Aplicacao {
         
         ///////////////item
         //criar
-        post("/itens", (req, res) -> {
-            Item i = gson.fromJson(req.body(), Item.class);
-            itemDAO.incluirItem(i);
-            return "Item criada!";
+       post("/itens", (req, res) -> {
+            res.type("application/json");
+            try {
+                Item i = gson.fromJson(req.body(), Item.class);
+                itemDAO.incluirItem(i); 
+                res.status(201);
+                return gson.toJson(i);
+            } catch (Exception e) {
+                res.status(400);
+                return gson.toJson(Map.of("erro", "Erro ao criar: " + e.getMessage()));
+            }
         });
          //atualizar
         put("/itens/:id", (req, res) -> {
-            int id = Integer.parseInt(req.params("id"));
-            Item i = gson.fromJson(req.body(), Item.class);
-            i.setId(id);
-
-            boolean ok = itemDAO.alterarItem(i);
-
-            if(ok) return "Item atualizada!";
-            return "Erro ao atualizar!";
+            res.type("application/json");
+            try {
+                int id = Integer.parseInt(req.params("id"));
+                Item i = gson.fromJson(req.body(), Item.class);
+                i.setId(id);
+                boolean ok = itemDAO.alterarItem(i);
+                if (ok) return gson.toJson(Map.of("mensagem", "Item atualizado!"));
+                
+                res.status(404);
+                return gson.toJson(Map.of("erro", "Item não encontrado para atualizar"));
+            } catch (Exception e) {
+                res.status(400);
+                return gson.toJson(Map.of("erro", "Erro ao atualizar: " + e.getMessage()));
+            }
         });
          //excluir
         delete("/itens/:id", (req, res) -> {
-            int id = Integer.parseInt(req.params("id"));
-            boolean ok = itemDAO.excluirItem(id);
-
-            if(ok) return "Item excluída!";
-            return "Erro ao excluir!";
+            res.type("application/json");
+            try {
+                int id = Integer.parseInt(req.params("id"));
+                boolean ok = itemDAO.excluirItem(id);
+                if (ok) return gson.toJson(Map.of("mensagem", "Item excluído!"));
+                
+                res.status(404); // Ou 400 dependendo da regra de negócio (se falhou por ter dependências)
+                return gson.toJson(Map.of("erro", "Não foi possível excluir (Verifique dependências ou ID)"));
+            } catch (Exception e) {
+                res.status(400);
+                return gson.toJson(Map.of("erro", "Erro: " + e.getMessage()));
+            }
+        });
+//lista todos os itens
+        get("/itens", (req, res) -> {
+    res.type("application/json");
+    return gson.toJson(itemDAO.listarItens()); 
+});
+// Buscar Item Único por ID (Método buscarItem)
+        get("/itens/:id", (req, res) -> {
+            res.type("application/json");
+            try {
+                int id = Integer.parseInt(req.params("id"));
+                Item item = itemDAO.buscarItem(id);
+                
+                if (item != null) {
+                    return gson.toJson(item);
+                } else {
+                    res.status(404);
+                    return gson.toJson(Map.of("erro", "Item não encontrado"));
+                }
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(Map.of("erro", "Erro ao buscar: " + e.getMessage()));
+            }
+        });
+        // Listar IDs das PessoasComanda que compraram este item (Método getPessoasQueCompraramItem)
+        get("/itens/:id/consumidores", (req, res) -> {
+            res.type("application/json");
+            try {
+                int id = Integer.parseInt(req.params("id"));
+                List<Integer> ids = itemDAO.getPessoasQueCompraramItem(id);
+                return gson.toJson(ids);
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(Map.of("erro", "Erro ao buscar consumidores: " + e.getMessage()));
+            }
+        });
+//  Listar IDs das Comandas onde este item aparece (Método getComandasDoItem)
+        get("/itens/:id/comandas", (req, res) -> {
+            res.type("application/json");
+            try {
+                int id = Integer.parseInt(req.params("id"));
+                List<Integer> ids = itemDAO.getComandasDoItem(id);
+                return gson.toJson(ids);
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(Map.of("erro", "Erro ao buscar comandas: " + e.getMessage()));
+            }
         });
 
          ///////////////pagamento
@@ -190,12 +259,57 @@ public class Aplicacao {
             if(ok) return "Pagamento excluída!";
             return "Erro ao excluir!";
         });
-        // Criar (incluir)
+
+        // Criar (incluir) PESSOA COMANDA ITEM
 post("/pessoa-comanda-item", (req, res) -> {
-    Pessoa_Comanda_Item pci = gson.fromJson(req.body(), Pessoa_Comanda_Item.class);
-    pciDAO.incluirPessoa_Comanda_Item(pci);
-    return "Pessoa_Comanda_Item criado!";
+    res.type("application/json"); // Garante resposta JSON
+    try {
+        // 1. Recebe os dados brutos como Map para flexibilidade
+        Map<String, Object> body = gson.fromJson(req.body(), Map.class);
+        
+        // Converte os IDs (Gson lê números como Double, então convertemos para int)
+        int idPessoaComanda = ((Double) body.get("idPessoaComanda")).intValue();
+        int idComanda = ((Double) body.get("idComanda")).intValue();
+        int idItem = ((Double) body.get("idItem")).intValue();
+        
+        // Se você tiver campo quantidade no futuro, pegaria aqui:
+        // int qtd = body.containsKey("quantidade") ? ((Double) body.get("quantidade")).intValue() : 1;
+
+        // 2. Verifica se JÁ EXISTE no banco
+        Pessoa_Comanda_Item existente = pciDAO.buscarPorChaveComposta(idPessoaComanda, idComanda, idItem);
+
+        if (existente != null) {
+            // CENÁRIO A: JÁ EXISTE -> Retorna sucesso sem fazer nada (evita o erro de chave duplicada)
+            // Se seu model tiver .setQuantidade(), aqui seria a hora de somar e chamar pciDAO.alterar()
+            res.status(200); 
+            return gson.toJson(Map.of(
+                "mensagem", "Item já estava na comanda desta pessoa. (Quantidade mantida)",
+                "status", "existente"
+            ));
+        }
+
+        // CENÁRIO B: NÃO EXISTE -> Cria novo
+        Pessoa_Comanda_Item novo = new Pessoa_Comanda_Item();
+        novo.setIdPessoaComanda(idPessoaComanda);
+        novo.setIdComanda(idComanda);
+        novo.setIdItem(idItem);
+        // novo.setQuantidade(qtd); // Descomente se seu model tiver esse método
+
+        pciDAO.incluirPessoa_Comanda_Item(novo);
+        
+        res.status(201);
+        return gson.toJson(Map.of(
+            "mensagem", "Item adicionado com sucesso!",
+            "status", "criado"
+        ));
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        res.status(400);
+        return gson.toJson(Map.of("erro", "Erro ao processar: " + e.getMessage()));
+    }
 });
+
 
 // Buscar por chave composta
 get("/pessoa-comanda-item/:idPessoa/:idComanda/:idItem", (req, res) -> {
@@ -269,7 +383,7 @@ get("/pessoa-comanda-item/item/:idItem", (req, res) -> {
 });
 
 
-// Listar todas as PessoasComanda
+// Listar todas as PessoasComanda PESSOACO
 get("/pessoas-comanda", (req, res) -> {
     res.type("application/json");
     try {

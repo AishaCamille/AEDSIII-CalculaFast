@@ -1,516 +1,206 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CalculaFast - Gerenciar Pessoas em Comandas</title>
+    <title>CalculaFast - Pessoas da Comanda</title>
     <link rel="icon" href="./assets/logo.png" type="image/x-icon">
     <link rel="stylesheet" href="pessoas.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
-        }
-        #container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1, h2, h3 {
-            color: #333;
-        }
-        .section {
-            margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+        .lista-item {
+            border-bottom: 1px solid #ccc;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background-color: #f9f9f9;
-        }
-        input, select, button {
-            padding: 8px;
-            margin: 5px;
-            border: 1px solid #ddd;
+            margin-bottom: 5px;
             border-radius: 4px;
         }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
+        .acoes button {
+            margin-left: 5px;
+            padding: 5px 10px;
             cursor: pointer;
         }
-        button:hover {
-            background-color: #45a049;
-        }
-        button.delete {
-            background-color: #f44336;
-        }
-        button.delete:hover {
-            background-color: #d32f2f;
-        }
-        .pessoa-item {
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background-color: #fff;
-        }
-        .success {
-            color: green;
-            font-weight: bold;
-        }
-        .error {
-            color: red;
-            font-weight: bold;
-        }
+        .btn-editar { background-color: #ffc107; border: none; border-radius: 3px; }
+        .btn-deletar { background-color: #dc3545; color: white; border: none; border-radius: 3px; }
     </style>
 </head>
+
 <body>
+    
     <a id="header" href="index.html">
         <img src="./assets/outraOUTRa.png" alt="Logo" id="logo">
     </a>
     
     <div id="container">
-        <h1>Gerenciar Pessoas em Comandas</h1>
-        
-        <!-- Seção 1: Listar todas as PessoasComanda -->
-        <div class="section">
-            <h2>Todas as Pessoas em Comandas</h2>
-            <button onclick="listarPessoasComanda()">Carregar Lista</button>
-            <div id="listaPessoasComanda"></div>
-        </div>
-        
-        <!-- Seção 2: Buscar PessoaComanda por ID -->
-        <div class="section">
-            <h2>Buscar PessoaComanda por ID</h2>
-            <input type="number" id="buscarId" placeholder="ID da PessoaComanda">
-            <button onclick="buscarPessoaComanda()">Buscar</button>
-            <div id="resultadoBusca"></div>
-        </div>
-        
-        <!-- Seção 3: Criar nova PessoaComanda -->
-        <div class="section">
-            <h2>Criar Nova PessoaComanda</h2>
-            <input type="number" id="novaId" placeholder="ID (novo)">
-            <input type="number" id="novaIdComanda" placeholder="ID da Comanda">
-            <input type="text" id="novaObservacao" placeholder="Observação (opcional)">
-            <button onclick="criarPessoaComanda()">Criar</button>
-            <div id="resultadoCriacao"></div>
-        </div>
-        
-        <!-- Seção 4: Atualizar PessoaComanda -->
-        <div class="section">
-            <h2>Atualizar PessoaComanda</h2>
-            <input type="number" id="atualizarId" placeholder="ID para atualizar">
-            <input type="number" id="atualizarIdComanda" placeholder="Novo ID da Comanda">
-            <input type="text" id="atualizarObservacao" placeholder="Nova observação">
-            <button onclick="atualizarPessoaComanda()">Atualizar</button>
-            <div id="resultadoAtualizacao"></div>
-        </div>
-        
-        <!-- Seção 5: Excluir PessoaComanda -->
-        <div class="section">
-            <h2>Excluir PessoaComanda</h2>
-            <input type="number" id="excluirId" placeholder="ID para excluir">
-            <button class="delete" onclick="excluirPessoaComanda()">Excluir</button>
-            <div id="resultadoExclusao"></div>
-        </div>
-        
-        <!-- Seção 6: Buscar por Comanda -->
-        <div class="section">
-            <h2>Buscar Pessoas por Comanda</h2>
-            <input type="number" id="buscarComandaId" placeholder="ID da Comanda">
-            <button onclick="buscarPorComanda()">Buscar</button>
-            <div id="resultadoComanda"></div>
-        </div>
-        
-        <!-- Seção 7: Gerenciar Itens da PessoaComanda -->
-        <div class="section">
-            <h2>Gerenciar Itens da PessoaComanda</h2>
-            <h3>Adicionar Item</h3>
-            <input type="number" id="pessoaIdItem" placeholder="ID PessoaComanda">
-            <input type="number" id="comandaIdItem" placeholder="ID Comanda">
-            <input type="number" id="itemId" placeholder="ID Item">
-            <button onclick="adicionarItem()">Adicionar Item</button>
+        <h1>Pessoas na Comanda</h1>
+
+        <h3 style="text-align:center; color:#555;">Editando Comanda #<span id="displayIdComanda"></span></h3>
+
+        <div id="statusMsg" style="color: blue; text-align: center; margin-bottom: 10px; height: 20px;"></div>
+
+        <div id="formContatos">
+            <input type="hidden" id="idPessoaComanda">
             
-            <h3>Remover Item</h3>
-            <input type="number" id="removerPessoaId" placeholder="ID PessoaComanda">
-            <input type="number" id="removerItemId" placeholder="ID Item">
-            <input type="number" id="removerComandaId" placeholder="ID Comanda">
-            <button class="delete" onclick="removerItem()">Remover Item</button>
+            Nome da Pessoa: <input type="text" id="campoNome" placeholder="Ex: João Silva"><br>
             
-            <h3>Listar Itens</h3>
-            <input type="number" id="listarItensId" placeholder="ID PessoaComanda">
-            <button onclick="listarItens()">Listar Itens</button>
-            <div id="listaItens"></div>
+            <button id="btnSalvar" onclick="salvarPessoa()">Adicionar à Comanda</button>
+            <button id="btnCancelar" onclick="limparFormulario()" style="display:none; background-color: #777; color:white;">Cancelar</button>
+            <button id="index" onclick="ContinuarParaIndex()">Continuar</button>
         </div>
-        
-        <!-- Seção 8: Calcular Consumo -->
-        <div class="section">
-            <h2>Calcular Consumo Total</h2>
-            <input type="number" id="calcularId" placeholder="ID PessoaComanda">
-            <button onclick="calcularConsumo()">Calcular</button>
-            <div id="resultadoConsumo"></div>
-        </div>
-        
-        <button id="voltarIndex" onclick="voltarParaIndex()" style="margin-top: 20px;">Voltar para a Página Inicial</button>
+
+        <div id="tela" style="margin-top: 20px; color: rgb(26, 17, 17);"></div>
+
+        <button id="voltarIndex" onclick="voltarParaIndex()">Voltar para a Página Inicial</button>
     </div>
 
     <script>
-        const BASE_URL = 'http://localhost:4567';
+        const API_URL = 'http://localhost:4567'; 
         
+        let ID_COMANDA_ATUAL = localStorage.getItem('idComandaAtiva'); 
+        
+
+        document.getElementById('displayIdComanda').textContent = ID_COMANDA_ATUAL;
+
+        function ContinuarParaIndex() {
+            window.location.href = 'produtos.html';
+        }
+
         function voltarParaIndex() {
             window.location.href = 'index.html';
         }
-        
-        // 1. Listar todas as PessoasComanda
-        async function listarPessoasComanda() {
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda`);
-                const data = await response.json();
-                
-                const container = document.getElementById('listaPessoasComanda');
-                container.innerHTML = '<h3>Resultado:</h3>';
-                
-                if (Array.isArray(data)) {
-                    if (data.length === 0) {
-                        container.innerHTML += '<p class="error">Nenhuma PessoaComanda encontrada.</p>';
-                        return;
-                    }
-                    
-                    data.forEach(pc => {
-                        const div = document.createElement('div');
-                        div.className = 'pessoa-item';
-                        div.innerHTML = `
-                            <strong>ID:</strong> ${pc.id} <br>
-                            <strong>ID Comanda:</strong> ${pc.idComanda} <br>
-                            <strong>Observação:</strong> ${pc.observacao || 'Nenhuma'} <br>
-                            <button onclick="verDetalhes(${pc.id})">Ver Detalhes</button>
-                        `;
-                        container.appendChild(div);
-                    });
-                } else {
-                    container.innerHTML += `<p class="error">${data.erro || 'Erro desconhecido'}</p>`;
+
+
+        // 1. LISTAR (GET por Comanda)
+        function listarPessoas() {
+            fetch(`${API_URL}/pessoas-comanda/comanda/${ID_COMANDA_ATUAL}`)
+            .then(response => {
+                if(!response.ok) throw new Error("Erro ao buscar pessoas");
+                return response.json();
+            })
+            .then(lista => {
+                let tela = document.getElementById('tela');
+                tela.innerHTML = '';
+
+                if (!lista || lista.length === 0) {
+                    tela.innerHTML = '<p style="text-align:center">Ninguém nesta comanda ainda.</p>';
+                    return;
                 }
-            } catch (error) {
-                document.getElementById('listaPessoasComanda').innerHTML = 
-                    `<p class="error">Erro: ${error.message}</p>`;
-            }
-        }
-        
-        // 2. Buscar PessoaComanda por ID
-        async function buscarPessoaComanda() {
-            const id = document.getElementById('buscarId').value;
-            if (!id) {
-                alert('Por favor, insira um ID.');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda/${id}`);
-                const data = await response.json();
-                
-                const container = document.getElementById('resultadoBusca');
-                container.innerHTML = '<h3>Resultado:</h3>';
-                
-                if (response.status === 404 || data.erro) {
-                    container.innerHTML += `<p class="error">${data.erro || 'Não encontrado'}</p>`;
-                } else {
-                    container.innerHTML += `
-                        <div class="pessoa-item">
-                            <strong>ID:</strong> ${data.id} <br>
-                            <strong>ID Comanda:</strong> ${data.idComanda} <br>
-                            <strong>Observação:</strong> ${data.observacao || 'Nenhuma'}
+
+                // Inverte a ordem para o último adicionado aparecer primeiro (opcional)
+                lista.reverse().forEach(pessoa => {
+                    tela.innerHTML += `
+                        <div class="lista-item">
+                            <span><strong>${pessoa.nome}</strong> </span>
+                            <div class="acoes">
+                                <button class="btn-editar" onclick="prepararEdicao(${pessoa.id}, '${pessoa.nome}')">✏️ Editar</button>
+                                <button class="btn-deletar" onclick="deletarPessoa(${pessoa.id})">🗑️ Remover</button>
+                            </div>
                         </div>
                     `;
-                }
-            } catch (error) {
-                document.getElementById('resultadoBusca').innerHTML = 
-                    `<p class="error">Erro: ${error.message}</p>`;
-            }
-        }
-        
-        // 3. Criar nova PessoaComanda
-        async function criarPessoaComanda() {
-            const id = document.getElementById('novaId').value;
-            const idComanda = document.getElementById('novaIdComanda').value;
-            
-            if (!id || !idComanda) {
-                alert('Por favor, preencha o ID e o ID da Comanda.');
-                return;
-            }
-            
-            const novaPessoaComanda = {
-                id: parseInt(id),
-                idComanda: parseInt(idComanda),
-                observacao: document.getElementById('novaObservacao').value || ""
-            };
-            
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(novaPessoaComanda)
                 });
-                
-                const data = await response.json();
-                const container = document.getElementById('resultadoCriacao');
-                container.innerHTML = '<h3>Resultado:</h3>';
-                
-                if (response.status === 201) {
-                    container.innerHTML += `<p class="success">${data.mensagem} (ID: ${data.id})</p>`;
-                    // Limpar campos
-                    document.getElementById('novaId').value = '';
-                    document.getElementById('novaIdComanda').value = '';
-                    document.getElementById('novaObservacao').value = '';
-                } else {
-                    container.innerHTML += `<p class="error">${data.erro || 'Erro na criação'}</p>`;
-                }
-            } catch (error) {
-                document.getElementById('resultadoCriacao').innerHTML = 
-                    `<p class="error">Erro: ${error.message}</p>`;
-            }
+            })
+            .catch(error => console.error('Erro:', error));
         }
-        
-        // 4. Atualizar PessoaComanda
-        async function atualizarPessoaComanda() {
-            const id = document.getElementById('atualizarId').value;
-            const idComanda = document.getElementById('atualizarIdComanda').value;
-            
-            if (!id) {
-                alert('Por favor, insira o ID para atualizar.');
+
+        // 2. SALVAR (POST ou PUT)
+        function salvarPessoa() {
+            const id = document.getElementById('idPessoaComanda').value;
+            const nome = document.getElementById('campoNome').value;
+
+            if (!nome.trim()) {
+                alert('Por favor, insira um nome.');
                 return;
             }
-            
-            const pessoaComandaAtualizada = {
-                id: parseInt(id),
-                idComanda: idComanda ? parseInt(idComanda) : undefined,
-                observacao: document.getElementById('atualizarObservacao').value || ""
-            };
-            
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda/${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(pessoaComandaAtualizada)
-                });
-                
-                const data = await response.json();
-                const container = document.getElementById('resultadoAtualizacao');
-                container.innerHTML = '<h3>Resultado:</h3>';
-                
-                if (response.ok) {
-                    container.innerHTML += `<p class="success">${data.mensagem || 'Atualizado com sucesso!'}</p>`;
-                } else {
-                    container.innerHTML += `<p class="error">${data.erro || 'Erro na atualização'}</p>`;
-                }
-            } catch (error) {
-                document.getElementById('resultadoAtualizacao').innerHTML = 
-                    `<p class="error">Erro: ${error.message}</p>`;
+
+            // Objeto conforme seu Model Java (PessoaComanda)
+            const payload = {
+                nome: nome,
+                idComanda: ID_COMANDA_ATUAL  };
+
+            let url, method;
+
+            if (id) {
+                url = `${API_URL}/pessoas-comanda/${id}`;
+                method = 'PUT';
+                payload.id = parseInt(id); 
+            } else {
+                url = `${API_URL}/pessoas-comanda`;
+                method = 'POST';
             }
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro na operação');
+                return response.json();
+            })
+            .then(data => {
+                mostrarStatus(id ? 'Pessoa atualizada!' : 'Pessoa adicionada!');
+                limparFormulario();
+                listarPessoas(); 
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao salvar: ' + error.message);
+            });
         }
-        
-        // 5. Excluir PessoaComanda
-        async function excluirPessoaComanda() {
-            const id = document.getElementById('excluirId').value;
-            if (!id) {
-                alert('Por favor, insira um ID.');
-                return;
-            }
-            
-            if (!confirm(`Tem certeza que deseja excluir a PessoaComanda ID ${id}?`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda/${id}`, {
-                    method: 'DELETE'
-                });
-                
-                const data = await response.json();
-                const container = document.getElementById('resultadoExclusao');
-                container.innerHTML = '<h3>Resultado:</h3>';
-                
-                if (response.ok) {
-                    container.innerHTML += `<p class="success">${data.mensagem || 'Excluído com sucesso!'}</p>`;
-                    document.getElementById('excluirId').value = '';
-                } else {
-                    container.innerHTML += `<p class="error">${data.erro || 'Erro na exclusão'}</p>`;
-                }
-            } catch (error) {
-                document.getElementById('resultadoExclusao').innerHTML = 
-                    `<p class="error">Erro: ${error.message}</p>`;
-            }
+
+        function deletarPessoa(id) {
+            fetch(`${API_URL}/pessoas-comanda/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro ao deletar');
+                mostrarStatus('Pessoa removida.');
+                listarPessoas();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao remover.');
+            });
         }
-        
-        // 6. Buscar por Comanda
-        async function buscarPorComanda() {
-            const idComanda = document.getElementById('buscarComandaId').value;
-            if (!idComanda) {
-                alert('Por favor, insira o ID da Comanda.');
-                return;
-            }
+
+
+        function prepararEdicao(id, nome) {
+            document.getElementById('idPessoaComanda').value = id;
+            document.getElementById('campoNome').value = nome;
             
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda/comanda/${idComanda}`);
-                const data = await response.json();
-                
-                const container = document.getElementById('resultadoComanda');
-                container.innerHTML = '<h3>Resultado:</h3>';
-                
-                if (Array.isArray(data)) {
-                    if (data.length === 0) {
-                        container.innerHTML += '<p>Nenhuma PessoaComanda encontrada para esta comanda.</p>';
-                    } else {
-                        data.forEach(pc => {
-                            const div = document.createElement('div');
-                            div.className = 'pessoa-item';
-                            div.innerHTML = `
-                                <strong>ID PessoaComanda:</strong> ${pc.id} <br>
-                                <strong>Observação:</strong> ${pc.observacao || 'Nenhuma'}
-                            `;
-                            container.appendChild(div);
-                        });
-                    }
-                } else if (data.erro) {
-                    container.innerHTML += `<p class="error">${data.erro}</p>`;
-                }
-            } catch (error) {
-                document.getElementById('resultadoComanda').innerHTML = 
-                    `<p class="error">Erro: ${error.message}</p>`;
-            }
+            document.getElementById('btnSalvar').textContent = "Atualizar";
+            document.getElementById('btnCancelar').style.display = "inline-block";
         }
-        
-        // 7.1 Adicionar Item
-        async function adicionarItem() {
-            const pessoaId = document.getElementById('pessoaIdItem').value;
-            const comandaId = document.getElementById('comandaIdItem').value;
-            const itemId = document.getElementById('itemId').value;
+
+        function limparFormulario() {
+            document.getElementById('idPessoaComanda').value = '';
+            document.getElementById('campoNome').value = '';
             
-            if (!pessoaId || !comandaId || !itemId) {
-                alert('Por favor, preencha todos os campos.');
-                return;
-            }
-            
-            const dados = {
-                idComanda: parseInt(comandaId),
-                idItem: parseInt(itemId)
-            };
-            
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda/${pessoaId}/itens`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(dados)
-                });
-                
-                const data = await response.json();
-                alert(data.mensagem || data.erro || 'Operação concluída');
-            } catch (error) {
-                alert(`Erro: ${error.message}`);
-            }
+            document.getElementById('btnSalvar').textContent = "Adicionar à Comanda";
+            document.getElementById('btnCancelar').style.display = "none";
         }
-        
-        // 7.2 Remover Item
-        async function removerItem() {
-            const pessoaId = document.getElementById('removerPessoaId').value;
-            const itemId = document.getElementById('removerItemId').value;
-            const comandaId = document.getElementById('removerComandaId').value;
-            
-            if (!pessoaId || !itemId || !comandaId) {
-                alert('Por favor, preencha todos os campos.');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda/${pessoaId}/itens/${itemId}/comanda/${comandaId}`, {
-                    method: 'DELETE'
-                });
-                
-                const data = await response.json();
-                alert(data.mensagem || data.erro || 'Operação concluída');
-            } catch (error) {
-                alert(`Erro: ${error.message}`);
-            }
+
+        function mostrarStatus(msg) {
+            const div = document.getElementById('statusMsg');
+            div.textContent = msg;
+            setTimeout(() => div.textContent = '', 3000);
         }
-        
-        // 7.3 Listar Itens
-        async function listarItens() {
-            const pessoaId = document.getElementById('listarItensId').value;
-            if (!pessoaId) {
-                alert('Por favor, insira o ID da PessoaComanda.');
-                return;
+
+        // Tecla Enter para salvar
+        document.getElementById('campoNome').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                salvarPessoa();
             }
-            
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda/${pessoaId}/itens`);
-                const data = await response.json();
-                
-                const container = document.getElementById('listaItens');
-                container.innerHTML = '<h3>Itens da PessoaComanda:</h3>';
-                
-                if (Array.isArray(data)) {
-                    if (data.length === 0) {
-                        container.innerHTML += '<p>Nenhum item encontrado.</p>';
-                    } else {
-                        data.forEach(itemId => {
-                            const div = document.createElement('div');
-                            div.className = 'pessoa-item';
-                            div.innerHTML = `<strong>ID Item:</strong> ${itemId}`;
-                            container.appendChild(div);
-                        });
-                    }
-                } else if (data.erro) {
-                    container.innerHTML += `<p class="error">${data.erro}</p>`;
-                }
-            } catch (error) {
-                document.getElementById('listaItens').innerHTML = 
-                    `<p class="error">Erro: ${error.message}</p>`;
-            }
-        }
-        
-        // 8. Calcular Consumo
-        async function calcularConsumo() {
-            const pessoaId = document.getElementById('calcularId').value;
-            if (!pessoaId) {
-                alert('Por favor, insira o ID da PessoaComanda.');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${BASE_URL}/pessoas-comanda/${pessoaId}/consumo-total`);
-                const data = await response.json();
-                
-                const container = document.getElementById('resultadoConsumo');
-                container.innerHTML = '<h3>Resultado:</h3>';
-                
-                if (data.consumoTotal !== undefined) {
-                    container.innerHTML += `<p><strong>Consumo Total:</strong> R$ ${data.consumoTotal.toFixed(2)}</p>`;
-                } else if (data.erro) {
-                    container.innerHTML += `<p class="error">${data.erro}</p>`;
-                }
-            } catch (error) {
-                document.getElementById('resultadoConsumo').innerHTML = 
-                    `<p class="error">Erro: ${error.message}</p>`;
-            }
-        }
-        
-        // Função auxiliar para ver detalhes
-        function verDetalhes(id) {
-            document.getElementById('buscarId').value = id;
-            buscarPessoaComanda();
-            // Rolagem suave até a seção de busca
-            document.getElementById('buscarId').scrollIntoView({ behavior: 'smooth' });
-        }
+        });
+
+        // Inicializa carregando a lista
+        listarPessoas();
+
     </script>
+
 </body>
 </html>

@@ -74,4 +74,11 @@ public class ItemDAO  {
         arqItem.close();
         pciDAO.fechar();
     }
+    public List<Item> listarItens() throws Exception {
+        List<Item> lista = new ArrayList<>();
+        arqItem.scanValidRecords((pos, obj) -> {
+            lista.add((Item) obj);
+        });
+        return lista;
+    }
 }
