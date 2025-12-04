@@ -13,9 +13,11 @@ O sistema realiza operações de **CRUD (Create, Read, Update, Delete)** e simul
 ## 📘 Como Utilizar
 
 compilar e executar **Aplicacao.java**, iniciar pág web pelo **index.html**, localizado em **resource/public/index.html**
-página produtos.html há a demonstração da relação n:n de pessoa, comanda e item.
-página produtos.html está com o front utilizando o algoritmo de casamento de padroes.
-página segundaPagina.html há a demonstração da relação 1:n de pagamento e comanda
+Página produtos.html há a demonstração da relação n:n de pessoa, comanda e item.
+
+Página produtos.html está com o front utilizando o algoritmo de casamento de padroes.
+
+Página segundaPagina.html há a demonstração da relação 1:n de pagamento e comanda
 
 ---
 
