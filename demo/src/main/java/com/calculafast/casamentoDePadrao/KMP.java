@@ -1,7 +1,12 @@
 package com.calculafast.casamentoDePadrao;
 
 public class KMP {
-    void kmp(String texto, String padrao){
+    public boolean kmp(String texto, String padrao){
+        if (texto == null || padrao == null || padrao.isEmpty()) return false;
+
+        texto = texto.toLowerCase();
+        padrao = padrao.toLowerCase();
+
         int[] lps= new int[padrao.length()];
         lps= construirLPS(padrao, padrao.length());
         int i=0;
@@ -12,8 +17,8 @@ public class KMP {
                 j++;
             }
             if(j==padrao.length()){
-                System.out.println("Padrao encontrado no indice: "+ (i-j));
-                j=lps[j-1];
+                return true;
+              //  j=lps[j-1]; procurando p saber se o item existe
             }else if(i<texto.length() && texto.charAt(i)!=padrao.charAt(j)){
                 if(j!=0){
                     j=lps[j-1];
@@ -22,6 +27,7 @@ public class KMP {
                 }
             }
         }
+        return false;
     }
     
 

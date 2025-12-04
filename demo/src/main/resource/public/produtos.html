@@ -3,33 +3,68 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CalculaFast - Adicionar Produtos</title>
     <link rel="icon" href="./assets/logo.png" type="image/x-icon">
     <link rel="stylesheet" href="produtos.css">
+
+    <style>
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe; margin: 10% auto; padding: 20px;
+            border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 8px;
+        }
+        .close {
+            color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;
+        }
+        .itens-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .itens-table th, .itens-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .itens-table th { background-color: #f2f2f2; }
+    </style>
 </head>
 
 <body>
-    <div id="header">
+    <a id="header" href="index.html">
         <img src="./assets/outraOUTRa.png" alt="Logo" id="logo">
-    </div>
+    </a>
 
     <div class="container">
-        <h1>Comanda #<span id="displayIdComanda"></span></h1>
+        <h1>Cadastre seus Produtos!</h1>
+
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ddd;">
+            <label style="font-weight:bold;">🔍 Pesquisa Inteligente (Busca no Banco):</label>
+            
+            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                <input type="text" id="campoBusca" placeholder="Digite o nome do item..." onkeyup="filtrarItens()" 
+                       style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                
+                <div style="display: flex; flex-direction: column; justify-content: center; font-size: 0.85em;">
+                    <label style="cursor: pointer; margin-bottom: 2px;">
+                        <input type="radio" name="algoritmo" value="1" checked onchange="filtrarItens()"> KMP
+                    </label>
+                    <label style="cursor: pointer;">
+                        <input type="radio" name="algoritmo" value="2" onchange="filtrarItens()"> Boyer-Moore
+                    </label>
+                </div>
+            </div>
+            <small style="color: #666;">O sistema filtrará a lista abaixo usando o algoritmo selecionado.</small>
+        </div>
 
         <div class="form-group">
-            <label for="selecionarItem" class="form-label">
-                Selecione um item existente ou cadastre novo
-            </label>
+            <label for="selecionarItem" class="form-label">Item Selecionado:</label>
             <div class="select-wrapper">
                 <select id="selecionarItem" class="custom-select" onchange="carregarItemSelecionado()">
                     <option value="">-- Novo Item --</option>
                 </select>
-                <div class="select-arrow">
-                    <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" /></svg>
-                </div>
+                <div class="select-arrow"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
             </div>
+        </div>
+
+        <div id="msgSucesso" style="display:none; background-color: #d4edda; color: #155724; padding: 10px; border: 1px solid #c3e6cb; border-radius: 5px; margin-bottom: 15px; text-align: center;">
+            ✅ Operação realizada com sucesso!
         </div>
 
         <label for="nomeProduto">Nome do Produto:</label>
@@ -38,7 +73,7 @@
         <label for="valorProduto">Valor Unitário (R$):</label>
         <input type="number" id="valorProduto" step="0.01" placeholder="0.00">
 
-        <label for="quantidadeProduto">Quantidade Total (Estoque/Controle):</label>
+        <label for="quantidadeProduto">Quantidade:</label>
         <input type="number" id="quantidadeProduto" min="1" value="1">
 
         <div id="pessoasCheckbox">
@@ -46,232 +81,233 @@
         </div>
 
         <div class="botoes-centro">
-            <button onclick="salvarProduto()">Salvar e Adicionar</button>
-            <button class="btn-ver-itens" onclick="abrirModalItens()">Gerenciar Itens (CRUD)</button>
-            <button class="btn-voltar" onclick="voltarParaPaginaAnterior()">Voltar</button>
-            <button class="btn-voltar" onclick="Continuar()">Finalizar</button>
+            <button onclick="salvarProduto()">Salvar / Vincular</button>
+            <button class="btn-ver-itens" onclick="abrirModalItens()" style="background-color: #17a2b8;">Gerenciar Itens</button>
+            <button class="btn-voltar" onclick="window.location.href='pessoas.html'">Voltar</button>
+            <button class="btn-voltar" onclick="window.location.href='segundaPagina.html'">Finalizar</button>
         </div>
 
+        <div id="logTecnico" style="margin-top: 20px; background: #333; color: #0f0; padding: 10px; font-family: monospace; font-size: 12px; display: none;">
+            <strong>LOG DO SISTEMA (DEBUG):</strong><br>
+            <div id="logContent"></div>
+        </div>
     </div>
 
     <div id="modalItens" class="modal">
         <div class="modal-content">
             <span class="close" onclick="fecharModalItens()">&times;</span>
-            <h2>Gerenciar Itens do Banco</h2>
+            <h2>Itens Cadastrados</h2>
             <div id="listaItens">Carregando...</div>
         </div>
     </div>
 
     <script>
-        const API_URL = 'http://localhost:4567'; // Verifique se é 4567 ou 6789
-        
-        // Recupera o ID da Comanda ativa
-        let ID_COMANDA_ATUAL = localStorage.getItem('idComandaAtiva');
+        const API_URL = 'http://localhost:4567'; 
+        let timeoutBusca = null;
+        let listaItensCache = [];
+        const ID_COMANDA_ATUAL = localStorage.getItem('idComandaAtiva');
 
         // --- INICIALIZAÇÃO ---
         window.addEventListener('DOMContentLoaded', () => {
             if (!ID_COMANDA_ATUAL) {
-                alert("Nenhuma comanda ativa! Voltando para o início.");
+                alert("Nenhuma comanda ativa!");
                 window.location.href = 'index.html';
                 return;
             }
-            document.getElementById('displayIdComanda').textContent = ID_COMANDA_ATUAL;
-            
-            carregarItensDoBanco(); 
-            carregarPessoasDaComanda(); 
+            carregarItensDoBanco(); // Carrega lista inicial
+            carregarPessoasDaComanda(); // Carrega checkboxes
         });
 
-        function voltarParaPaginaAnterior() {
-            window.location.href = 'pessoas.html';
+        // --- 1. BUSCA INTELIGENTE (KMP / BOYER-MOORE) ---
+        function filtrarItens() {
+            clearTimeout(timeoutBusca);
+            const termo = document.getElementById('campoBusca').value;
+
+            if (!termo.trim()) {
+                carregarItensDoBanco(); // Se vazio, restaura lista completa
+                return;
+            }
+
+            // Delay de 300ms para não travar enquanto digita
+            timeoutBusca = setTimeout(() => {
+                executarBuscaNoJava(termo);
+            }, 300);
         }
 
-        function Continuar() {
-            window.location.href = 'segundaPagina.html'; 
+        async function executarBuscaNoJava(termo) {
+            const algoritmo = document.querySelector('input[name="algoritmo"]:checked').value;
+            const select = document.getElementById('selecionarItem');
+            select.innerHTML = '<option>Filtrando...</option>';
+
+            try {
+                // Chama a rota Java que usa suas classes KMP/BoyerMoore
+                const res = await fetch(`${API_URL}/itens/busca/${encodeURIComponent(termo)}?metodo=${algoritmo}`);
+                const itens = await res.json();
+                
+                listaItensCache = itens; // Atualiza cache
+                popularSelect(itens);
+
+            } catch (e) {
+                console.error(e);
+                select.innerHTML = '<option>Erro na busca</option>';
+            }
         }
 
-        // --- 1. CARREGAR DADOS ---
-
-        let listaItensCache = [];
-
+        // --- 2. CARREGAMENTO DE DADOS ---
         function carregarItensDoBanco() {
-            // Rota para buscar itens para o Select
-            fetch(`${API_URL}/itens`) 
-                .then(res => {
-                    if(!res.ok) return []; 
-                    return res.json();
-                })
+            fetch(`${API_URL}/itens`)
+                .then(res => res.ok ? res.json() : [])
                 .then(itens => {
                     listaItensCache = itens;
-                    const select = document.getElementById('selecionarItem');
-                    select.innerHTML = '<option value="">-- Novo Item --</option>';
-                    
-                    itens.forEach(item => {
-                        const opt = document.createElement('option');
-                        opt.value = item.id;
-                        opt.textContent = `${item.descricao} - R$ ${item.valor}`;
-                        select.appendChild(opt);
-                    });
-                })
-                .catch(err => console.log("Erro ao carregar itens (Verifique se a rota GET /itens existe):", err));
+                    popularSelect(itens);
+                });
+        }
+
+        function popularSelect(itens) {
+            const select = document.getElementById('selecionarItem');
+            select.innerHTML = '<option value="">-- Novo Item --</option>';
+            
+            if (itens.length === 0) {
+                const opt = document.createElement('option');
+                opt.disabled = true;
+                opt.textContent = "❌ Nenhum item encontrado";
+                select.appendChild(opt);
+            } else {
+                itens.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = `${item.descricao} - R$ ${item.valor}`;
+                    select.appendChild(opt);
+                });
+            }
         }
 
         function carregarItemSelecionado() {
             const idItem = document.getElementById('selecionarItem').value;
-            if (!idItem) {
-                // Modo Novo Item
-                document.getElementById('nomeProduto').value = "";
-                document.getElementById('valorProduto').value = "";
-                document.getElementById('quantidadeProduto').value = "1";
-                return;
-            }
+            const nomeInput = document.getElementById('nomeProduto');
+            const valorInput = document.getElementById('valorProduto');
 
-            const item = listaItensCache.find(i => i.id == idItem);
-            if (item) {
-                document.getElementById('nomeProduto').value = item.descricao;
-                document.getElementById('valorProduto').value = item.valor;
-                document.getElementById('quantidadeProduto').value = 1; 
+            if (!idItem) {
+                // Modo Novo Item: Limpa campos
+                nomeInput.value = "";
+                valorInput.value = "";
+            } else {
+                // Modo Edição: Preenche campos com dados do cache
+                const item = listaItensCache.find(i => i.id == idItem);
+                if (item) {
+                    nomeInput.value = item.descricao;
+                    valorInput.value = item.valor;
+                }
             }
         }
 
         function carregarPessoasDaComanda() {
-            // Busca as PessoasComanda vinculadas a esta comanda (Assume rota do passo anterior)
             fetch(`${API_URL}/pessoas-comanda/comanda/${ID_COMANDA_ATUAL}`)
                 .then(res => res.json())
                 .then(pessoas => {
                     const div = document.getElementById('pessoasCheckbox');
-                    if (pessoas.length === 0) {
-                        div.innerHTML = '<p style="color:red">Nenhuma pessoa nesta comanda.</p>';
+                    if (!pessoas || pessoas.length === 0) {
+                        div.innerHTML = '<p style="color:red">Ninguém na comanda.</p>';
                         return;
                     }
-
-                    let html = `<label>Quem vai consumir este item?</label>`;
-                    pessoas.forEach((p) => {
+                    
+                    let html = `<label>Quem vai consumir?</label>`;
+                    pessoas.forEach(p => {
                         html += `
-                        <div style="margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding: 5px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <div>
-                                    <input type="checkbox" class="chk-pessoa" id="chk_${p.id}" value="${p.id}">
-                                    <label for="chk_${p.id}" style="font-weight: bold;">${p.nome}</label>
-                                </div>
+                        <div style="margin-bottom: 5px; border-bottom: 1px dashed #ccc; padding: 5px; display: flex; justify-content: space-between;">
+                            <div>
+                                <input type="checkbox" class="chk-pessoa" id="chk_${p.id}" value="${p.id}">
+                                <label for="chk_${p.id}" style="font-weight: bold;">${p.nome}</label>
+                            </div>
+                            <div>
+                                <small>Qtd:</small>
+                                <input type="number" id="qtd_${p.id}" min="1" value="1" style="width:50px;">
                             </div>
                         </div>`;
                     });
                     div.innerHTML = html;
-                })
-                .catch(err => {
-                    console.error(err);
-                    document.getElementById('pessoasCheckbox').innerHTML = "Erro ao carregar pessoas.";
                 });
         }
 
-        // --- 2. SALVAR (CRIAR ITEM + VINCULAR) ---
-
-       async function salvarProduto() {
-            const idItemSelecionado = document.getElementById('selecionarItem').value;
+        // --- 3. SALVAR E VINCULAR ---
+        async function salvarProduto() {
+            const idItemSelect = document.getElementById('selecionarItem').value;
             const nome = document.getElementById('nomeProduto').value;
             const valor = parseFloat(document.getElementById('valorProduto').value);
-            const quantidadeTotal = parseInt(document.getElementById('quantidadeProduto').value);
+            const qtdEstoque = parseInt(document.getElementById('quantidadeProduto').value);
 
-            // Validação
             if (!nome || isNaN(valor)) {
-                console.log("Preencha nome e valor corretamente.");
+                alert("Preencha nome e valor.");
                 return;
             }
 
             const checkboxes = document.querySelectorAll('.chk-pessoa:checked');
-            if (checkboxes.length === 0) {
-                console.log("Selecione pelo menos uma pessoa para consumir o item.");
-                return;
-            }
 
-            let idItemFinal = idItemSelecionado;
+            let idItemFinal = idItemSelect;
 
             try {
-                // --- PASSO A: CRIAR ITEM (Se for novo) ---
-                if (!idItemFinal) {
-                    const novoItem = {
-                        descricao: nome,
-                        valor: valor,
-                        quantidade: quantidadeTotal // Estoque geral
-                    };
+                const dadosItem = { descricao: nome, valor: valor, quantidade: qtdEstoque };
 
+                // Se não tem ID selecionado, cria novo (POST). Se tem, atualiza (PUT).
+                if (!idItemFinal) {
                     const res = await fetch(`${API_URL}/itens`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(novoItem)
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(dadosItem)
                     });
-
-                    if (!res.ok) throw new Error("Erro ao criar item no estoque.");
-                    
-                    // Tenta pegar o ID retornado
-                    try {
-                        const itemCriado = await res.json();
-                        idItemFinal = itemCriado.id || itemCriado.itemId;
-                    } catch (e) {
-                        // Fallback de segurança se o Java não retornar JSON
-                        const lista = await fetch(`${API_URL}/itens`).then(r => r.json());
-                        const ultimo = lista[lista.length - 1];
-                        if (ultimo) idItemFinal = ultimo.id;
-                    }
+                    const criado = await res.json();
+                    idItemFinal = criado.id || criado.itemId; // Pega ID gerado
+                } else {
+                    const res = await fetch(`${API_URL}/itens/${idItemFinal}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(dadosItem)
+                    });
+                }
+                if (!idItemFinal) {
+                    const lista = await fetch(`${API_URL}/itens`).then(r => r.json());
+                    idItemFinal = lista[lista.length - 1].id;
                 }
 
-                if (!idItemFinal) throw new Error("Falha ao identificar o ID do Item.");
-
-                // --- PASSO B: VINCULAR ITEM ÀS PESSOAS ---
-                
-                const promises = Array.from(checkboxes).map(chk => {
-                    const idPessoaComanda = parseInt(chk.value);
-                    
-                    // Pega a quantidade individual que você digitou na caixinha ao lado do nome
-                    const inputQtdIndividual = document.getElementById(`qtd_${idPessoaComanda}`);
-                    const qtdIndividual = inputQtdIndividual ? parseInt(inputQtdIndividual.value) : 1;
-
-                    const dadosAssociacao = {
-                        idPessoaComanda: idPessoaComanda,
-                        idComanda: parseInt(ID_COMANDA_ATUAL),
-                        idItem: parseInt(idItemFinal),
-                        quantidade: qtdIndividual // Envia a quantidade (o Java recebe, mesmo se não usar agora)
-                    };
-
-                    return fetch(`${API_URL}/pessoa-comanda-item`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(dadosAssociacao)
-                    }).then(async res => {
-                        // Lê a resposta (seja JSON ou Texto) para não dar erro de sintaxe
-                        const text = await res.text();
-                        try {
-                            return JSON.parse(text); // Tenta converter pra objeto
-                        } catch {
-                            return { mensagem: text }; // Se for texto puro, embrulha num objeto
-                        }
+                // Vincula o item (novo ou existente) às pessoas selecionadas
+                if (checkboxes.length > 0) {
+                    const promises = Array.from(checkboxes).map(chk => {
+                        const idPessoa = chk.value;
+                        const qtdIndividual = document.getElementById(`qtd_${idPessoa}`).value;
+                        
+                        return fetch(`${API_URL}/pessoa-comanda-item`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                idPessoaComanda: parseInt(idPessoa),
+                                idComanda: parseInt(ID_COMANDA_ATUAL),
+                                idItem: parseInt(idItemFinal),
+                                quantidade: parseInt(qtdIndividual)
+                            })
+                        });
                     });
-                });
+                    await Promise.all(promises);
+                }
 
-                await Promise.all(promises);
-
-                console.log("Processo finalizado! Itens vinculados.");
+                // Feedback Visual
+                exibirSucesso(checkboxes.length > 0); 
+                 exibirLogTecnico(checkboxes, idItemFinal);
                 
-                // Limpa a tela
-                carregarItensDoBanco(); 
+                // Limpeza
+                carregarItensDoBanco(); // Recarrega lista
                 document.getElementById('selecionarItem').value = "";
                 document.getElementById('nomeProduto').value = "";
                 document.getElementById('valorProduto').value = "";
-                checkboxes.forEach(c => {
-                    c.checked = false;
-                    // Reseta a quantidade individual visualmente para 1
-                    const qtdInput = document.getElementById(`qtd_${c.value}`);
-                    if(qtdInput) qtdInput.value = 1;
-                });
+                document.getElementById('quantidadeProduto').value = "1";
+                checkboxes.forEach(c => c.checked = false);
 
-            } catch (error) {
-                console.error(error);
-                console.log("Ocorreu um erro: " + error.message);
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao salvar: " + e.message);
             }
         }
 
-        // --- 3. MODAL CRUD DE ITENS (Extra) ---
-
+        // --- 4. FUNÇÕES DE MODAL E GERENCIAMENTO ---
         function abrirModalItens() {
             document.getElementById('modalItens').style.display = 'block';
             listarItensNoModal();
@@ -289,45 +325,82 @@
                 .then(res => res.json())
                 .then(itens => {
                     if (itens.length === 0) {
-                        div.innerHTML = "<p>Nenhum item cadastrado.</p>";
+                        div.innerHTML = "<p>Nenhum item.</p>";
                         return;
                     }
-                    let html = `<table class="itens-table">
-                        <thead><tr><th>ID</th><th>Descrição</th><th>Valor</th><th>Ações</th></tr></thead><tbody>`;
-                    
+                    let html = `<table class="itens-table"><thead><tr><th>Item</th><th>Valor</th><th>Ações</th></tr></thead><tbody>`;
                     itens.forEach(i => {
                         html += `<tr>
-                            <td>${i.id}</td>
                             <td>${i.descricao}</td>
                             <td>R$ ${i.valor}</td>
-                            <td><button onclick="deletarItem(${i.id})" style="background:red; color:white;">Excluir</button></td>
+                            <td>
+                                <button onclick="verQuemComprou(${i.id}, '${i.descricao}')" style="background:#17a2b8; color:white; margin-right:5px; cursor:pointer;">👥 Ver Consumidores</button>
+                                <button onclick="deletarItem(${i.id})" style="background:red; color:white; cursor:pointer;">🗑️</button>
+                            </td>
                         </tr>`;
                     });
                     html += "</tbody></table>";
                     div.innerHTML = html;
-                })
-                .catch(err => div.innerHTML = "Erro ao listar itens.");
+                });
         }
 
         async function deletarItem(id) {
-            if (!confirm("Tem certeza?")) return;
-            try {
-                // Chama a rota de DELETE /itens/:id
-                const res = await fetch(`${API_URL}/itens/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    listarItensNoModal();
-                    carregarItensDoBanco();
-                } else {
-                    console.log("Erro ao excluir. Item pode estar vinculado a alguém.");
-                }
-            } catch (e) {
-                console.log("Erro de conexão.");
+            if(!confirm("Excluir item?")) return;
+            const res = await fetch(`${API_URL}/itens/${id}`, { method: 'DELETE' });
+            if(res.ok) {
+                listarItensNoModal();
+                carregarItensDoBanco();
+            } else {
+                alert("Erro: Item em uso.");
             }
         }
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('modalItens');
-            if (event.target === modal) fecharModalItens();
+        async function verQuemComprou(idItem, nomeItem) {
+            const res = await fetch(`${API_URL}/itens/${idItem}/consumidores`);
+            const ids = await res.json();
+            if(ids.length === 0) { alert(`Ninguém consumiu '${nomeItem}'.`); return; }
+            
+            let nomes = [];
+            for(let id of ids) {
+                const r = await fetch(`${API_URL}/pessoas-comanda/${id}`);
+                if(r.ok) { const p = await r.json(); nomes.push(p.nome); }
+            }
+            alert(`Consumidores de '${nomeItem}':\n- ${nomes.join('\n- ')}`);
+        }
+
+        // --- AUXILIARES ---
+        function exibirSucesso(teveVinculo) {
+            const msg = document.getElementById('msgSucesso');
+          if (teveVinculo) {
+                msg.innerHTML = "✅ Item salvo e vinculado às pessoas!";
+            } else {
+                msg.innerHTML = "💾 Item salvo no catálogo (Sem vínculos).";
+            }
+            
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+
+        function exibirLogTecnico(checkboxes, idItem) {
+          const logDiv = document.getElementById('logTecnico');
+            const logContent = document.getElementById('logContent');
+            logDiv.style.display = 'block';
+            logContent.innerHTML = '';
+            
+            if (checkboxes.length === 0) {
+                logContent.innerHTML += `
+                    > Item ID ${idItem} atualizado/criado no Catálogo.<br>
+                    > Nenhuma chave composta gerada Item órfão na comanda).<br>
+                    -----------------------------------------------------<br>`;
+            } else {
+                checkboxes.forEach(chk => {
+                    logContent.innerHTML += `> Chave Composta Gerada: [Pessoa:${chk.value}] + [Comanda:${ID_COMANDA_ATUAL}] + [Item:${idItem}]<br>`;
+                });
+            }
+        }
+
+        window.onclick = function(ev) {
+            if (ev.target == document.getElementById('modalItens')) fecharModalItens();
         }
     </script>
 </body>

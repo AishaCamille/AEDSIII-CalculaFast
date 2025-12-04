@@ -3,6 +3,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.calculafast.casamentoDePadrao.KMP;
+import com.calculafast.casamentoDePadrao.BoyerMoore;
+import java.util.stream.Collectors;
+
 import com.calculafast.dao.ComandaDAO;
 import com.calculafast.dao.ItemDAO;
 import com.calculafast.dao.PagamentoDAO;
@@ -30,7 +34,7 @@ public class Aplicacao {
 
         port(4567);
 
-
+///cors
   options("/*", (request, response) -> {
             String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
             if (accessControlRequestHeaders != null) {
@@ -51,6 +55,8 @@ public class Aplicacao {
             response.header("Access-Control-Allow-Headers", "Content-Type");
         });
 
+        ///cors end
+
         Gson gson = new Gson();
 
         PessoaDAO pessoaDAO = new PessoaDAO();
@@ -59,6 +65,8 @@ public class Aplicacao {
         PagamentoDAO pagamentoDAO = new PagamentoDAO();
         Pessoa_Comanda_ItemDAO pciDAO = new Pessoa_Comanda_ItemDAO();
         PessoaComandaDAO pessoaComandaDAO = new PessoaComandaDAO();
+        KMP kmpAlgoritmo = new KMP();
+        BoyerMoore bmAlgoritmo = new BoyerMoore();
 
         pciDAO.setComandaDAO(comandaDAO);
     pciDAO.setPessoaComandaDAO(pessoaComandaDAO);
@@ -73,32 +81,37 @@ public class Aplicacao {
         get("/pessoas", (req, res) -> {
             res.type("application/json");
             return gson.toJson(pessoaDAO.listarPessoas());
+                });
+
+
+                //criar
+                post("/pessoas", (req, res) -> {
+            res.type("application/json");
+            try {
+             // 1. Em vez de criar o objeto Pessoa direto, lemos os dados brutos
+                Map<String, Object> body = gson.fromJson(req.body(), Map.class);
+                
+                String nome = (String) body.get("nome");
+                String email = (String) body.get("email");
+                String senha = (String) body.get("senha"); 
+                
+                Pessoa p = new Pessoa(nome, email, senha);
+                
+                boolean criado = pessoaDAO.incluirPessoa(p);
+                
+                if (criado) {
+                    res.status(201);
+                    return gson.toJson(Map.of("mensagem", "Pessoa criada com sucesso!"));
+                } else {
+                    res.status(400);
+                    return gson.toJson(Map.of("erro", "Erro ao criar pessoa"));
+                }
+            } catch (Exception e) {
+                e.printStackTrace(); 
+                res.status(500);
+                return gson.toJson(Map.of("erro", "Erro: " + e.getMessage()));
+            }
         });
-        //criar
-        post("/pessoas", (req, res) -> {
-    res.type("application/json");
-    try {
-        Pessoa p = gson.fromJson(req.body(), Pessoa.class);
-        
-        String senhaTemp = p.getSenha(); 
-        if (senhaTemp != null && !senhaTemp.isEmpty()) {
-            p.setSenha(senhaTemp); 
-        }
-        
-        boolean criado = pessoaDAO.incluirPessoa(p);
-        
-        if (criado) {
-            res.status(201);
-            return gson.toJson(Map.of("mensagem", "Pessoa criada com sucesso!"));
-        } else {
-            res.status(400);
-            return gson.toJson(Map.of("erro", "Erro ao criar pessoa"));
-        }
-    } catch (Exception e) {
-        res.status(500);
-        return gson.toJson(Map.of("erro", "Erro: " + e.getMessage()));
-    }
-});
         //atualizar
         put("/pessoas/:id", (req, res) -> {
             int id = Integer.parseInt(req.params("id"));
@@ -273,12 +286,56 @@ public class Aplicacao {
             }
         });
 
+        //utilizando casamento de padroes aqui
+        get("/itens/busca/:termo", (req, res) -> {
+            res.type("application/json");
+            try {
+                String termo = req.params("termo");
+                // Recebe ?metodo=1 (KMP) ou ?metodo=2 (BoyerMoore)
+                String metodoParam = req.queryParams("metodo");
+                int metodo = (metodoParam != null) ? Integer.parseInt(metodoParam) : 1;
+
+                // 1. Pega TODOS os itens do banco
+                List<Item> todosItens = itemDAO.listarItens();
+
+                // 2. Filtra a lista usando seus algoritmos
+                List<Item> filtrados = todosItens.stream().filter(item -> {
+                    if (metodo == 1) {
+                        // Usa sua classe KMP
+                        return kmpAlgoritmo.kmp(item.getDescricao(), termo);
+                    } else {
+                        // Usa sua classe BoyerMoore
+                        return bmAlgoritmo.buscar(item.getDescricao(), termo);
+                    }
+                }).collect(Collectors.toList());
+
+                return gson.toJson(filtrados);
+
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(Map.of("erro", "Erro na busca: " + e.getMessage()));
+            }
+        });
+
          ///////////////pagamento
         //criar
         post("/pagamentos", (req, res) -> {
-            Pagamento p = gson.fromJson(req.body(), Pagamento.class);
-            pagamentoDAO.incluirPagamento(p);
-            return "Pagamento criada!";
+            res.type("application/json");
+            try {
+                Pagamento p = gson.fromJson(req.body(), Pagamento.class);
+                boolean ok = pagamentoDAO.incluirPagamento(p);
+                
+                if (ok) {
+                    res.status(201);
+                    return gson.toJson(Map.of("mensagem", "Pagamento criado com sucesso!", "id", p.getId()));
+                } else {
+                    res.status(400);
+                    return gson.toJson(Map.of("erro", "Erro ao criar pagamento. Verifique se Pessoa e Comanda existem."));
+                }
+            } catch (Exception e) {
+                res.status(500);
+                return gson.toJson(Map.of("erro", "Erro interno: " + e.getMessage()));
+            }
         });
          //atualizar
         put("/pagamentos/:id", (req, res) -> {
@@ -300,49 +357,76 @@ public class Aplicacao {
             return "Erro ao excluir!";
         });
 
+        get("/pagamentos/comanda/:id", (req, res) -> {
+    res.type("application/json");
+    try {
+        int idComanda = Integer.parseInt(req.params("id"));
+        
+        //  Busca os IDs dos pagamentos dessa comanda
+        List<Integer> idsPagamentos = pagamentoDAO.listarPorComanda(idComanda);
+        
+        // para saber o valor e quem pagou
+        List<Pagamento> listaPagamentos = new ArrayList<>();
+        for (Integer idPag : idsPagamentos) {
+            Pagamento p = pagamentoDAO.buscarPagamento(idPag);
+            if (p != null) {
+                listaPagamentos.add(p);
+            }
+        }
+        
+        return gson.toJson(listaPagamentos);
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao listar pagamentos: " + e.getMessage()));
+    }
+});
+
         // Criar (incluir) PESSOA COMANDA ITEM
 post("/pessoa-comanda-item", (req, res) -> {
-    res.type("application/json"); 
+    res.type("application/json");
     try {
         Map<String, Object> body = gson.fromJson(req.body(), Map.class);
         
-        // Converte os IDs
         int idPessoaComanda = ((Double) body.get("idPessoaComanda")).intValue();
         int idComanda = ((Double) body.get("idComanda")).intValue();
         int idItem = ((Double) body.get("idItem")).intValue();
-        
-        int qtd = body.containsKey("quantidade") ? ((Double) body.get("quantidade")).intValue() : 1;
+        // Pega a quantidade enviada pelo front (ou assume 1)
+        int novaQtd = body.containsKey("quantidade") ? ((Double) body.get("quantidade")).intValue() : 1;
 
-        // 2. Verifica se JÁ EXISTE no banco
+        // 1. Verifica se JÁ EXISTE
         Pessoa_Comanda_Item existente = pciDAO.buscarPorChaveComposta(idPessoaComanda, idComanda, idItem);
 
         if (existente != null) {
-             res.status(200); 
+            // --- CENÁRIO: JÁ EXISTE -> SOMA A QUANTIDADE ---
+            int qtdAtual = existente.getQuantidade();
+            existente.setQuantidade(qtdAtual + novaQtd);
+            
+            // Atualiza no banco
+            boolean ok = pciDAO.alterarPessoa_Comanda_Item(existente);
+            
+            res.status(200); 
             return gson.toJson(Map.of(
-                "mensagem", "Item já estava na comanda desta pessoa. (Quantidade mantida)",
-                "status", "existente"
+                "mensagem", "Item já existia. Quantidade atualizada para: " + existente.getQuantidade(),
+                "status", "atualizado"
             ));
         }
 
-        //Cria novo
+        // --- CENÁRIO: NOVO REGISTRO ---
         Pessoa_Comanda_Item novo = new Pessoa_Comanda_Item();
         novo.setIdPessoaComanda(idPessoaComanda);
         novo.setIdComanda(idComanda);
         novo.setIdItem(idItem);
-        novo.setQuantidade(qtd); 
+        novo.setQuantidade(novaQtd); // Salva a quantidade inicial
 
         pciDAO.incluirPessoa_Comanda_Item(novo);
         
         res.status(201);
-        return gson.toJson(Map.of(
-            "mensagem", "Item adicionado com sucesso!",
-            "status", "criado"
-        ));
+        return gson.toJson(Map.of("mensagem", "Item adicionado com sucesso!", "status", "criado"));
 
     } catch (Exception e) {
         e.printStackTrace();
         res.status(400);
-        return gson.toJson(Map.of("erro", "Erro ao processar: " + e.getMessage()));
+        return gson.toJson(Map.of("erro", "Erro: " + e.getMessage()));
     }
 });
 

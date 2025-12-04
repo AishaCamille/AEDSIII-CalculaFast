@@ -7,69 +7,12 @@
     <title>CalculaFast - Fechamento</title>
     <link rel="icon" href="./assets/logo.png" type="image/x-icon">
     <link rel="stylesheet" href="segundaPagina.css">
-    
-    <style>
-        /* Fundo escuro (Overlay) */
-        .modal {
-            display: none; /* Escondido por padrão */
-            position: fixed; 
-            z-index: 1000; /* Fica acima de tudo */
-            left: 0;
-            top: 0;
-            width: 100%; 
-            height: 100%; 
-            overflow: auto; 
-            background-color: rgba(0,0,0,0.5); /* Preto com transparência */
-        }
-
-        /* Conteúdo Branco do Modal */
-        .modal-content {
-            background-color: #fefefe;
-            margin: 10% auto; /* 10% do topo e centralizado */
-            padding: 20px;
-            border: 1px solid #888;
-            width: 90%; 
-            max-width: 600px; /* Largura máxima */
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            position: relative;
-            animation: animatetop 0.4s;
-        }
-
-        /* Animação de descida */
-        @keyframes animatetop {
-            from {top: -300px; opacity: 0}
-            to {top: 0; opacity: 1}
-        }
-
-        /* Botão de Fechar (X) */
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        
-        /* Tabela dentro do modal */
-        .tabela-modal th, .tabela-modal td {
-            padding: 8px;
-            border-bottom: 1px solid #ddd;
-        }
-    </style>
+  
 </head>
 <body>
- 
     <div id="container">
         <div id="detalhesComanda">
-            <h2 id="tituloComanda">Carregando Comanda...</h2>
+            <h2 id="tituloComanda">Valor Total</h2>
             
             <div class="total-info">
                 <div id="valorTotal">
@@ -85,6 +28,26 @@
                 <li>Carregando dados...</li>
             </ul>
         </div>
+        <div id="historicoPagamentos" style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+    <h3>
+        Histórico de Pagamentos (Relação 1:N)
+        <span style="font-size: 0.6em; background: #007bff; color: #fff; padding: 3px 6px; border-radius: 4px; vertical-align: middle;" title="Implementação: Hash Extensível -> Lista Invertida">
+            Hash + Lista Invertida
+        </span>
+    </h3>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                <th style="text-align: left; padding: 8px;">ID Pagto</th>
+                <th style="text-align: left; padding: 8px;">Quem Pagou (ID)</th>
+                <th style="text-align: right; padding: 8px;">Valor</th>
+            </tr>
+        </thead>
+        <tbody id="listaHistoricoPagamentos">
+            <tr><td colspan="3" style="padding: 10px; text-align: center; color: #777;">Nenhum pagamento registrado nesta lista invertida.</td></tr>
+        </tbody>
+    </table>
+</div>
         
         <button class="btn-voltar" onclick="voltarParaPaginaAnterior()">Voltar para a Página Anterior</button>
         <button onclick="finalizarComanda()">Finalizar Comanda</button>
@@ -96,10 +59,11 @@
         const API_URL = 'http://localhost:4567'; 
 
         // Variável global
-        let DADOS_COMANDA = {
-            pessoas: [], 
-            totalGeral: 0
-        };
+       let DADOS_COMANDA = {
+        pessoas: [], 
+        totalGeral: 0,
+        pagamentos: {} 
+    };
 
         document.addEventListener("DOMContentLoaded", function() {
             const idComanda = localStorage.getItem('idComandaAtiva');
@@ -110,7 +74,7 @@
                 return;
             }
 
-            document.getElementById('tituloComanda').textContent = `Detalhes da Comanda #${idComanda}`;
+          //  document.getElementById('tituloComanda').textContent = `Detalhes da Comanda #${idComanda}`;
             carregarDadosDoBanco(idComanda);
         });
 
@@ -118,7 +82,7 @@
             window.location.href = 'produtos.html';
         }
 
-        // --- LÓGICA PRINCIPAL ---
+        //  PRINCIPAL 
         async function carregarDadosDoBanco(idComanda) {
             try {
                 const resPessoas = await fetch(`${API_URL}/comandas/${idComanda}/pessoas-detalhadas`);
@@ -133,6 +97,22 @@
                 const resItens = await fetch(`${API_URL}/itens`);
                 const todosItens = await resItens.json();
 
+                const resPagamentos = await fetch(`${API_URL}/pagamentos/comanda/${idComanda}`);
+                const listaPagamentos = await resPagamentos.json();
+                DADOS_COMANDA.listaPagamentosBruta = listaPagamentos;
+                const mapaPagamentos = {};
+                if (Array.isArray(listaPagamentos)) {
+                    listaPagamentos.forEach(pg => {
+                        const val = parseFloat(pg.valorPago);
+                        if (mapaPagamentos[pg.idPessoa]) {
+                            mapaPagamentos[pg.idPessoa] += val;
+                        } else {
+                            mapaPagamentos[pg.idPessoa] = val;
+                        }
+                    });
+                }
+                DADOS_COMANDA.pagamentos = mapaPagamentos;
+
                 const mapaItens = {};
                 todosItens.forEach(item => mapaItens[item.id] = item);
 
@@ -146,15 +126,20 @@
                     const relacoesDestaPessoa = listaRelacoes.filter(r => r.idPessoaComanda === pessoa.id);
 
                     relacoesDestaPessoa.forEach(rel => {
-                        const itemCompleto = mapaItens[rel.idItem];
-                        if (itemCompleto) {
-                            totalPessoa += itemCompleto.valor;
-                            itensConsumidos.push({
-                                nome: itemCompleto.descricao,
-                                valor: itemCompleto.valor
-                            });
-                        }
-                    });
+                    const itemCompleto = mapaItens[rel.idItem];
+                    if (itemCompleto) {
+                         const qtd = rel.quantidade || 1; 
+                        const subtotal = itemCompleto.valor * qtd;
+                        totalPessoa += subtotal;
+                        
+                        itensConsumidos.push({
+                            nome: itemCompleto.descricao,
+                            valor: itemCompleto.valor, // Valor unitário
+                            quantidade: qtd,           // Guarda a quantidade para exibir no modal
+                            totalItem: subtotal        // Total deste item
+                        });
+                    }
+                });
 
                     totalComanda += totalPessoa;
 
@@ -192,23 +177,51 @@
 
             DADOS_COMANDA.pessoas.forEach(p => {
                 const valorComGarcom = p.total * 1.10;
-                
+                const jaPagouTotal = DADOS_COMANDA.pagamentos[p.id] || 0;
+                const estaPago = jaPagouTotal >= (valorComGarcom - 0.01);
                 const li = document.createElement("li");
-                
-                let btnHtml = '';
+                let statusHtml = '';
                 if (p.total > 0) {
-                    btnHtml = `<button class="btn-pagar" onclick="simularPagamento(this)">Registrar Pagamento</button>`;
+                if (estaPago) {
+                    statusHtml = '<span style="color:green; font-weight:bold; margin-left:10px;">✅ Pago</span>';
+                } else {
+                    statusHtml = `<button class="btn-pagar" onclick="realizarPagamento(${p.id}, ${p.total}, this)">Registrar Pagamento</button>`;
                 }
+            }
 
-                // Adicionei style="cursor:pointer" para indicar clique
-                li.innerHTML = `
-                    <span class="nome" style="cursor:pointer; color: blue; text-decoration: underline;" onclick="abrirModalItens(${p.id})">${p.nome}</span>
+               li.innerHTML = `
+                    <span class="nome" onclick="abrirModalItens(${p.id})">
+                        ${p.nome} 
+                        <span style="font-size: 0.7em; background: #e0e0e0; color: #555; padding: 2px 4px; border-radius: 4px; margin-left: 5px;" title="Recuperado via Índice Secundário (Inverted List)">
+                            Hash/Index
+                        </span>
+                    </span>
                     <span class="valor">R$ ${valorComGarcom.toFixed(2)}</span>
-                    ${btnHtml}
+                    ${statusHtml}
                 `;
                 
                 listaUl.appendChild(li);
             });
+            const tbodyPagamentos = document.getElementById("listaHistoricoPagamentos");
+            tbodyPagamentos.innerHTML = '';
+
+            if (DADOS_COMANDA.listaPagamentosBruta && DADOS_COMANDA.listaPagamentosBruta.length > 0) {
+                DADOS_COMANDA.listaPagamentosBruta.forEach(pg => {
+                    const pessoa = DADOS_COMANDA.pessoas.find(p => p.id === pg.idPessoa);
+                    const nomePessoa = pessoa ? pessoa.nome : `ID ${pg.idPessoa}`;
+                    
+                    const tr = document.createElement("tr");
+                    tr.style.borderBottom = "1px solid #eee";
+                    tr.innerHTML = `
+                        <td style="padding: 8px;">#${pg.id}</td>
+                        <td style="padding: 8px;">${nomePessoa}</td>
+                        <td style="padding: 8px; text-align: right;">R$ ${parseFloat(pg.valorPago).toFixed(2)}</td>
+                    `;
+                    tbodyPagamentos.appendChild(tr);
+                });
+            } else {
+                tbodyPagamentos.innerHTML = '<tr><td colspan="3" style="padding: 10px; text-align: center; color: #777;">A lista invertida desta comanda está vazia.</td></tr>';
+            }
         }
 
         // --- MODAL DE DETALHES ---
@@ -218,14 +231,14 @@
 
             const resumoItens = {};
             pessoa.itens.forEach(item => {
-                if (resumoItens[item.nome]) {
-                    resumoItens[item.nome].qtd++;
-                    resumoItens[item.nome].total += item.valor;
+                 if (resumoItens[item.nome]) {
+                   resumoItens[item.nome].qtd += item.quantidade;
+                    resumoItens[item.nome].total += item.totalItem;
                 } else {
                     resumoItens[item.nome] = {
-                        qtd: 1,
+                        qtd: item.quantidade,
                         valorUnit: item.valor,
-                        total: item.valor
+                        total: item.totalItem
                     };
                 }
             });
@@ -246,9 +259,7 @@
                 }
             }
 
-            // AQUI ESTAVA O PROBLEMA: Faltava estrutura CSS
-            // O modal agora tem classes que combinam com o CSS lá em cima
-            const modalHTML = `
+             const modalHTML = `
                 <div id="modalItens" class="modal" style="display: block;">
                     <div class="modal-content">
                         <span class="close" onclick="document.getElementById('modalItens').remove()">&times;</span>
@@ -275,9 +286,14 @@
         }
 
         async function finalizarComanda() {
-            if(!confirm("Deseja realmente fechar esta comanda?")) return;
+            if(!confirm("Já vai?")) return;
             
             const idComanda = localStorage.getItem('idComandaAtiva');
+            if(!idComanda) {
+                localStorage.clear();
+                window.location.href = 'index.html';
+                return;
+            }
             try {
                 const comandaUpdate = {
                     id: parseInt(idComanda),
@@ -293,17 +309,93 @@
                 });
 
                 console.log("Comanda Fechada com Sucesso!");
-                localStorage.removeItem('idComandaAtiva');
+                localStorage.clear();
+                //localStorage.removeItem('idComandaAtiva');
                 window.location.href = 'index.html';
 
             } catch (e) {
                 console.log("Erro ao fechar: " + e.message);
+                console.log("Erro ao fechar: " + e.message);
+               if(confirm("Houve um erro técnico, mas deseja sair mesmo assim?")) {
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                }
             }
         }
 
-        function simularPagamento(btn) {
-            btn.parentElement.innerHTML += '<span style="color:green; font-weight:bold; margin-left:10px;">✅ Pago</span>';
-            btn.remove();
+       async function realizarPagamento(idPessoaComanda, valorTotal, btnElement) {
+  
+    const idComanda = localStorage.getItem('idComandaAtiva');
+    if (!idComanda) {
+        alert("Erro: ID da comanda não encontrado.");
+        return;
+    }
+
+   
+    const novoPagamento = {
+        idPessoa: parseInt(idPessoaComanda), // ID do participante
+        idComanda: parseInt(idComanda),
+        valorPago: valorTotal * 1.1, // Valor com 10%
+     };
+
+    try {
+        const response = await fetch(`${API_URL}/pagamentos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(novoPagamento)
+        });
+
+        const resultado = await response.json();
+
+       if (response.ok) {
+                    console.log("Pagamento registrado com sucesso!");
+                    
+                   
+                    const liPai = btnElement.parentElement;
+                    btnElement.remove();
+                    liPai.insertAdjacentHTML('beforeend', '<span style="color:green; font-weight:bold; margin-left:10px;">✅ Pago</span>');
+                    
+                   
+                    adicionarLinhaAoHistorico(resultado.id, novoPagamento.idPessoa, novoPagamento.valorPago);
+                         if (!DADOS_COMANDA.pagamentos[novoPagamento.idPessoa]) {
+                        DADOS_COMANDA.pagamentos[novoPagamento.idPessoa] = 0;
+                    }
+                    DADOS_COMANDA.pagamentos[novoPagamento.idPessoa] += novoPagamento.valorPago;
+
+                } else {
+                    throw new Error(resultado.erro || "Falha ao registrar pagamento.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Erro: " + error.message);
+            }
+        }
+        function adicionarLinhaAoHistorico(idPagamento, idPessoa, valorPago) {
+            const tbody = document.getElementById("listaHistoricoPagamentos");
+
+            if (tbody.innerText.includes("Nenhum pagamento")) {
+                tbody.innerHTML = '';
+            }
+
+            const pessoaObj = DADOS_COMANDA.pessoas.find(p => p.id === idPessoa);
+            const nomePessoa = pessoaObj ? pessoaObj.nome : `ID ${idPessoa}`;
+
+            const novaLinha = document.createElement("tr");
+            novaLinha.style.borderBottom = "1px solid #eee";
+            novaLinha.style.backgroundColor = "#e8f5e9";
+            
+            novaLinha.innerHTML = `
+                <td style="padding: 8px;">#${idPagamento}</td>
+                <td style="padding: 8px;">${nomePessoa}</td>
+                <td style="padding: 8px; text-align: right;">R$ ${valorPago.toFixed(2)}</td>
+            `;
+
+            tbody.appendChild(novaLinha);
+            
+            setTimeout(() => {
+                novaLinha.style.backgroundColor = "transparent";
+                novaLinha.style.transition = "background-color 1s";
+            }, 2000);
         }
 
         window.onclick = function(event) {

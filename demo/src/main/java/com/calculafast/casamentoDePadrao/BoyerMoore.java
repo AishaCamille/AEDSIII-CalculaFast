@@ -1,12 +1,10 @@
 package com.calculafast.casamentoDePadrao;
 
 public class BoyerMoore {
-    // Tamanho do alfabeto ASCII
     static int NUMERO_DE_CARACTERES = 256; 
 
     // Função que preenche a tabela de deslocamentos baseada no char ruim
     void preencherTabelaCaractereRuim(char[] padrao, int tamanho, int[] tabelaCaractereRuim) {
-        // todas as posições com -1
         for(int i = 0; i < NUMERO_DE_CARACTERES; i++){
             tabelaCaractereRuim[i] = -1;
         }
@@ -17,7 +15,12 @@ public class BoyerMoore {
         }
     }
 
-    void buscar(String texto, String padrao){
+    public boolean buscar(String texto, String padrao){
+        if (texto == null || padrao == null || padrao.isEmpty()) return false;
+
+        texto = texto.toLowerCase();
+        padrao = padrao.toLowerCase();
+
         char[] arrayTexto = texto.toCharArray();
         char[] arrayPadrao = padrao.toCharArray();
         
@@ -39,20 +42,21 @@ public class BoyerMoore {
                 j--;
             }
 
-            if(j < 0){
-                System.out.println("Padrão encontrado no índice: " + deslocamento);
+            if(j < 0){ //para quando achar
+                return true;
 
-                
+               /*
                 if (deslocamento + tamPadrao < tamTexto) {
                     
                     deslocamento += tamPadrao - tabelaCaractereRuim[arrayTexto[deslocamento + tamPadrao]];
                 } else {
                     deslocamento += 1;
-                }
+                } */ 
             } else {
                 // Caso de incompatibilidade (Mismatch)
                 deslocamento += Math.max(1, j - tabelaCaractereRuim[arrayTexto[deslocamento + j]]);
             }
         }
+        return false;
     }
 }

@@ -11,7 +11,7 @@ import com.calculafast.index.inverted.InvertedList;
 import com.calculafast.model.Arquivo;
 import com.calculafast.model.Comanda;
 import com.calculafast.model.Pagamento;
-import com.calculafast.model.Pessoa;
+import com.calculafast.model.PessoaComanda;
 
 public class PagamentoDAO {
 
@@ -22,7 +22,7 @@ public class PagamentoDAO {
 
 
     //para verificação se existirem no banco
-   private PessoaDAO pessoaDAO;
+   private PessoaComandaDAO pessoaComandaDAO;
     private ComandaDAO comandaDAO;
 
     public PagamentoDAO() throws Exception {
@@ -31,15 +31,15 @@ public class PagamentoDAO {
         rebuildIndices();
 
          // Inicializa os DAOs para validação se existem no banco
-        pessoaDAO = new PessoaDAO();
+        pessoaComandaDAO = new PessoaComandaDAO();
         comandaDAO = new ComandaDAO();
     }
 
-    public PagamentoDAO(PessoaDAO pessoaDAO, ComandaDAO comandaDAO) throws Exception {
+    public PagamentoDAO(PessoaComandaDAO pessoaComandaDAO, ComandaDAO comandaDAO) throws Exception {
     arqPagamento = new Arquivo<>("Pagamentos", Pagamento.class.getConstructor());
     initIndices("./dados/Pagamentos/Pagamentos");
     
-    this.pessoaDAO = pessoaDAO;
+    this.pessoaComandaDAO = pessoaComandaDAO;
     this.comandaDAO = comandaDAO;
     
     rebuildIndices();
@@ -262,10 +262,12 @@ public class PagamentoDAO {
     }
 //metodos de verificação se pessoa e comanda existem antes de adc um pagamento
     
-// metodo para validar se pessoa existe
-    private boolean validarPessoa(int idPessoa) throws Exception {
-        Pessoa pessoa = pessoaDAO.buscarPessoa(idPessoa);
-        return pessoa != null;
+   private boolean validarPessoa(int idPessoa) throws Exception {
+      
+        if (pessoaComandaDAO == null) {
+            pessoaComandaDAO = new PessoaComandaDAO();
+        }
+        return pessoaComandaDAO.buscar(idPessoa) != null;
     }
      // metodo para validar se comanda existe
     private boolean validarComanda(int idComanda) throws Exception {
