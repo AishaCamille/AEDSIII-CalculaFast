@@ -28,6 +28,37 @@
                 <li>Carregando dados...</li>
             </ul>
         </div>
+        <div style="margin-top: 30px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+    <h3>
+        Buscar Pagamentos por Valor
+        <span style="font-size: 0.6em; background: #28a745; color: #fff; padding: 3px 6px; border-radius: 4px; vertical-align: middle;" title="Implementação: B+ Tree">
+            B+ Tree
+        </span>
+    </h3>
+    
+    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+        <input type="number" id="valorMin" placeholder="Mín (R$)" step="0.01" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100px;">
+        <span>até</span>
+        <input type="number" id="valorMax" placeholder="Máx (R$)" step="0.01" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100px;">
+        
+        <button onclick="buscarPorIntervalo()" style="background: #28a745; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">
+            🔍 Buscar
+        </button>
+        
+        <button onclick="limparBuscaBPT()" style="background: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">
+            Limpar
+        </button>
+    </div>
+
+    <div id="resultadoBPT" style="margin-top: 10px; display: none;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #e9ecef;"><th style="text-align: left; padding: 5px;">ID</th><th style="text-align: left; padding: 5px;">Comanda</th><th style="text-align: right; padding: 5px;">Valor</th></tr>
+            </thead>
+            <tbody id="listaBPT"></tbody>
+        </table>
+    </div>
+</div>
         <div id="historicoPagamentos" style="margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
     <h3>
         Histórico de Pagamentos (Relação 1:N)
@@ -397,6 +428,54 @@
                 novaLinha.style.transition = "background-color 1s";
             }, 2000);
         }
+        // --- BUSCA B+ TREE ---
+
+async function buscarPorIntervalo() {
+    const min = document.getElementById('valorMin').value;
+    const max = document.getElementById('valorMax').value;
+    const divResultado = document.getElementById('resultadoBPT');
+    const tbody = document.getElementById('listaBPT');
+
+    if (!min || !max) {
+        alert("Digite o valor mínimo e máximo.");
+        return;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="3">Buscando na Árvore B+...</td></tr>';
+    divResultado.style.display = 'block';
+
+    try {
+        const res = await fetch(`${API_URL}/pagamentos/busca/intervalo?min=${min}&max=${max}`);
+        const pagamentos = await res.json();
+
+        tbody.innerHTML = '';
+
+        if (pagamentos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3">Nenhum pagamento encontrado neste intervalo.</td></tr>';
+            return;
+        }
+
+        pagamentos.forEach(pg => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding: 5px;">#${pg.id}</td>
+                <td style="padding: 5px;">${pg.idComanda}</td>
+                <td style="padding: 5px; text-align: right;">R$ ${pg.valorPago.toFixed(2)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="3" style="color:red">Erro na busca.</td></tr>';
+    }
+}
+
+function limparBuscaBPT() {
+    document.getElementById('valorMin').value = '';
+    document.getElementById('valorMax').value = '';
+    document.getElementById('resultadoBPT').style.display = 'none';
+}
 
         window.onclick = function(event) {
             const modal = document.getElementById('modalItens');
