@@ -382,6 +382,36 @@ public class Aplicacao {
         return gson.toJson(Map.of("erro", "Erro ao listar pagamentos: " + e.getMessage()));
     }
 });
+// Rota de Busca por Intervalo de Valor (B+ Tree)
+get("/pagamentos/busca/intervalo", (req, res) -> {
+    res.type("application/json");
+    try {
+        // Recebe os parâmetros da URL: ?min=10.0&max=50.0
+        String minStr = req.queryParams("min");
+        String maxStr = req.queryParams("max");
+        
+        if (minStr == null || maxStr == null) {
+            res.status(400);
+            return gson.toJson(Map.of("erro", "Parâmetros 'min' e 'max' são obrigatórios."));
+        }
+        
+        double min = Double.parseDouble(minStr);
+        double max = Double.parseDouble(maxStr);
+        
+        // Chama o método do DAO que usa a B+ Tree
+        List<Pagamento> resultados = pagamentoDAO.buscarPorIntervaloValor(min, max);
+        
+        return gson.toJson(resultados);
+        
+    } catch (NumberFormatException e) {
+        res.status(400);
+        return gson.toJson(Map.of("erro", "Valores inválidos. Use formato numérico (ex: 10.50)."));
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro na busca: " + e.getMessage()));
+    }
+});
+        
 
         // Criar (incluir) PESSOA COMANDA ITEM
 post("/pessoa-comanda-item", (req, res) -> {
