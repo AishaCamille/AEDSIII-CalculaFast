@@ -13,11 +13,13 @@ O sistema realiza operações de **CRUD (Create, Read, Update, Delete)** e simul
 ## 📘 Como Utilizar
 
 compilar e executar **Aplicacao.java**, iniciar pág web pelo **index.html**, localizado em **resource/public/index.html**
-Página produtos.html há a demonstração da relação n:n de pessoa, comanda e item.
+Página produtos.html há a demonstração da relação n:n de pessoa, comanda e item, utilizando uma hash extensível
 
 Página produtos.html está com o front utilizando o algoritmo de casamento de padroes.
 
-Página segundaPagina.html há a demonstração da relação 1:n de pagamento e comanda
+Página segundaPagina.html há a demonstração da relação 1:n de pagamento e comanda, com hash extensível.
+
+Na segundaPagina.html há a opção de buscar por intervalos de valores (consumidos pelos clientes), utilizando a b+tree
 
 ---
 
