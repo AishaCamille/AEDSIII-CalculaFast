@@ -12,14 +12,37 @@ O sistema realiza operações de **CRUD (Create, Read, Update, Delete)** e simul
 ---
 ## 📘 Como Utilizar
 
-compilar e executar **Aplicacao.java**, iniciar pág web pelo **index.html**, localizado em **resource/public/index.html**
-Página produtos.html há a demonstração da relação n:n de pessoa, comanda e item, utilizando uma hash extensível
+### Passo 1: Compilar o projeto
+```bash
+cd demo
+mvn compile
+```
 
-Página produtos.html está com o front utilizando o algoritmo de casamento de padroes.
+### Passo 2: Executar o servidor
+```bash
+mvn -q -DskipTests exec:java -Dexec.mainClass=com.calculafast.app.Aplicacao
+```
 
-Página segundaPagina.html há a demonstração da relação 1:n de pagamento e comanda, com hash extensível.
+### Passo 3: Acessar a aplicação
+Abrir o arquivo index.html em `demo/src/main/resource/public/index.html` no navegador.
 
-Na segundaPagina.html há a opção de buscar por intervalos de valores (consumidos pelos clientes), utilizando a b+tree
+### Páginas disponíveis
+- **index.html** - Página principal com login/cadastro
+- **produtos.html** - Demonstração da relação N:N (pessoa, comanda, item) com busca por casamento de padrões
+- **segundaPagina.html** - Demonstração da relação 1:N (pagamento e comanda)
+
+---
+
+## 🧹 Script de Limpeza
+
+O script `clean.sh` remove todos os arquivos de dados (.db) da pasta `demo/dados/`, permitindo reiniciar a aplicação do zero.
+
+```bash
+cd scripts
+./clean.sh
+```
+
+Após executar, reinicie o servidor para recriar os arquivos de dados.
 
 ---
 
