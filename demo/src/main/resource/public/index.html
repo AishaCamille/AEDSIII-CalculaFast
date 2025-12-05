@@ -18,6 +18,7 @@
             const usuarioLogado = localStorage.getItem('usuarioLogado');
             if (!usuarioLogado) {
                 document.getElementById('modalLogin').classList.add('show');
+                verificarBackupDisponivel();
             } else {
                 const usuario = JSON.parse(usuarioLogado);
                 console.log('Usuário logado:', usuario.nome);
@@ -131,7 +132,7 @@
 
             try {
                 const novaComanda = {
-                    idPessoa: usuario.id, // O dono da comanda
+                    idPessoa: usuario.id,
                     status: "ABERTA",
                     consumoPessoa: 0.0
                 };
@@ -178,6 +179,177 @@
             window.open(url, '_blank');
         }
 
+        // ==========================================
+        // FUNÇÕES DE BACKUP E COMPRESSÃO
+        // ==========================================
+        
+        function abrirModalCompactar() {
+            document.getElementById('modalCompactar').classList.add('show');
+        }
+
+        function fecharModalCompactar() {
+            document.getElementById('modalCompactar').classList.remove('show');
+        }
+
+        function fecharModalResultado() {
+            document.getElementById('modalResultado').classList.remove('show');
+        }
+
+        async function compactarDados() {
+            const algoritmo = document.querySelector('input[name="algoritmo"]:checked').value;
+            const btnCompactar = document.getElementById('btnExecutarCompactar');
+            
+            btnCompactar.disabled = true;
+            btnCompactar.textContent = 'Compactando...';
+
+            try {
+                const response = await fetch(`${API_URL}/backup/compactar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ algoritmo })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    fecharModalCompactar();
+                    mostrarResultadoCompactacao(data.estatisticas);
+                } else {
+                    alert('Erro: ' + (data.erro || 'Falha ao compactar'));
+                }
+            } catch (error) {
+                alert('Erro de conexão com o servidor');
+                console.error(error);
+            } finally {
+                btnCompactar.disabled = false;
+                btnCompactar.textContent = 'Compactar';
+            }
+        }
+
+        function mostrarResultadoCompactacao(stats) {
+            const tamanhoOriginal = stats.tamanhoDadosAgrupados || 0;
+            const tamanhoComprimido = stats.tamanhoComprimido || 0;
+            const taxaCompressao = stats.taxaCompressao || 0;
+            const tempoMs = stats.tempoCompressaoMs || 0;
+            const numArquivos = stats.numeroArquivos || 0;
+            const algoritmo = stats.tipoCompressao || '';
+
+            document.getElementById('resultadoConteudo').innerHTML = `
+                <div class="resultado-item">
+                    <span class="resultado-label">Algoritmo:</span>
+                    <span class="resultado-valor">${algoritmo}</span>
+                </div>
+                <div class="resultado-item">
+                    <span class="resultado-label">Arquivos compactados:</span>
+                    <span class="resultado-valor">${numArquivos}</span>
+                </div>
+                <div class="resultado-item">
+                    <span class="resultado-label">Tamanho original:</span>
+                    <span class="resultado-valor">${formatarBytes(tamanhoOriginal)}</span>
+                </div>
+                <div class="resultado-item">
+                    <span class="resultado-label">Tamanho comprimido:</span>
+                    <span class="resultado-valor">${formatarBytes(tamanhoComprimido)}</span>
+                </div>
+                <div class="resultado-item destaque">
+                    <span class="resultado-label">Taxa de compressão:</span>
+                    <span class="resultado-valor">${taxaCompressao.toFixed(2)}%</span>
+                </div>
+                <div class="resultado-item">
+                    <span class="resultado-label">Economia:</span>
+                    <span class="resultado-valor">${formatarBytes(tamanhoOriginal - tamanhoComprimido)}</span>
+                </div>
+                <div class="resultado-item">
+                    <span class="resultado-label">Tempo:</span>
+                    <span class="resultado-valor">${tempoMs}ms</span>
+                </div>
+            `;
+
+            document.getElementById('modalResultado').classList.add('show');
+        }
+
+        function formatarBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function verificarBackupDisponivel() {
+            try {
+                const response = await fetch(`${API_URL}/backup/info`);
+                const data = await response.json();
+                
+                const btnRestaurar = document.getElementById('btnRestaurarLogin');
+                if (data.existe) {
+                    btnRestaurar.style.display = 'block';
+                    btnRestaurar.title = `Backup de ${data.dataFormatada} (${data.tipoCompressao})`;
+                } else {
+                    btnRestaurar.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Erro ao verificar backup:', error);
+            }
+        }
+
+        async function restaurarBackupLogin() {
+            if (!confirm('Deseja restaurar o backup? Os dados atuais serão substituídos.')) {
+                return;
+            }
+
+            const btn = document.getElementById('btnRestaurarLogin');
+            btn.disabled = true;
+            btn.textContent = 'Restaurando...';
+
+            try {
+                const response = await fetch(`${API_URL}/backup/restaurar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Backup restaurado com sucesso!');
+                    location.reload();
+                } else {
+                    alert('Erro: ' + (data.erro || 'Falha ao restaurar'));
+                }
+            } catch (error) {
+                alert('Erro de conexão com o servidor');
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Restaurar Backup';
+            }
+        }
+
+        async function descompactarDados() {
+            if (!confirm('Deseja descompactar o backup? Os dados atuais serão substituídos.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/backup/restaurar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Backup restaurado com sucesso!');
+                    location.reload();
+                } else {
+                    alert('Erro: ' + (data.erro || 'Nenhum backup encontrado'));
+                }
+            } catch (error) {
+                alert('Erro de conexão com o servidor');
+                console.error(error);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             let menuOpen = false;
             const menuMobileMain = document.querySelector('.menu-mobile-main');
@@ -195,6 +367,197 @@
             });
         });
     </script>
+
+    <style>
+        /* Modal de Compactação */
+        .modal-compactar {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-compactar h2 {
+            margin: 0 0 20px 0;
+            color: #333;
+            text-align: center;
+        }
+
+        .opcoes-algoritmo {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .opcao-algoritmo {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .opcao-algoritmo:hover {
+            border-color: #ff9800;
+            background: #fff8f0;
+        }
+
+        .opcao-algoritmo input[type="radio"] {
+            margin-right: 15px;
+            transform: scale(1.3);
+            accent-color: #ff9800;
+        }
+
+        .opcao-algoritmo input[type="radio"]:checked + .opcao-info {
+            color: #ff9800;
+        }
+
+        .opcao-info {
+            flex: 1;
+        }
+
+        .opcao-info strong {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .opcao-info small {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .botoes-modal {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .botoes-modal button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancelar {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-cancelar:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-confirmar {
+            background: linear-gradient(135deg, #ff9800, #ff5722);
+            color: white;
+        }
+
+        .btn-confirmar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+        }
+
+        .btn-confirmar:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Modal de Resultado */
+        .modal-resultado {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-resultado h2 {
+            margin: 0 0 5px 0;
+            color: #2e7d32;
+            text-align: center;
+        }
+
+        .resultado-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .resultado-item:last-child {
+            border-bottom: none;
+        }
+
+        .resultado-item.destaque {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            margin: 10px -15px;
+            padding: 15px;
+            border-radius: 8px;
+            border-bottom: none;
+        }
+
+        .resultado-item.destaque .resultado-valor {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .resultado-label {
+            color: #666;
+        }
+
+        .resultado-valor {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Botão de Restaurar no Login */
+        .btn-restaurar-login {
+            background: linear-gradient(135deg, #607d8b, #455a64);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .btn-restaurar-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(96, 125, 139, 0.4);
+        }
+
+        .btn-restaurar-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Botão Convidar Amigos */
+        .btn-convidar {
+            background-color: #1ba14d !important;
+            color: white !important;
+        }
+
+        .btn-convidar:hover {
+            background-color: #148a3d !important;
+            color: white !important;
+        }
+    </style>
 
     <title>CalculaFast</title>
 </head>
@@ -221,6 +584,10 @@
 
                     <button type="submit" class="btn-login">Entrar</button>
                 </form>
+
+                <button id="btnRestaurarLogin" class="btn-restaurar-login" onclick="restaurarBackupLogin()" style="display: none;">
+                    Restaurar Backup
+                </button>
 
                 <div class="toggle-form">
                     Não tem uma conta? <a onclick="toggleForms()">Cadastre-se</a>
@@ -257,6 +624,51 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Compactação -->
+    <div id="modalCompactar" class="modal-overlay">
+        <div class="modal-compactar">
+            <h2>Compactar Dados</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                Selecione o algoritmo de compressão:
+            </p>
+            
+            <div class="opcoes-algoritmo">
+                <label class="opcao-algoritmo">
+                    <input type="radio" name="algoritmo" value="huffman" checked>
+                    <div class="opcao-info">
+                        <strong>Huffman</strong>
+                        <small>Baseado em frequência de símbolos. Melhor para textos.</small>
+                    </div>
+                </label>
+                
+                <label class="opcao-algoritmo">
+                    <input type="radio" name="algoritmo" value="lzw">
+                    <div class="opcao-info">
+                        <strong>LZW</strong>
+                        <small>Baseado em dicionário. Melhor para dados repetitivos.</small>
+                    </div>
+                </label>
+            </div>
+
+            <div class="botoes-modal">
+                <button class="btn-cancelar" onclick="fecharModalCompactar()">Cancelar</button>
+                <button id="btnExecutarCompactar" class="btn-confirmar" onclick="compactarDados()">Compactar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultado -->
+    <div id="modalResultado" class="modal-overlay">
+        <div class="modal-resultado">
+            <h2>Compactacao Concluida</h2>
+            <div id="resultadoConteudo"></div>
+            <div class="botoes-modal" style="margin-top: 25px;">
+                <button class="btn-confirmar" onclick="fecharModalResultado()" style="flex: 1;">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <main>
         <aside>
             <nav class="navegacao">
@@ -267,6 +679,16 @@
                     <li>
                         <a>
                             <button onclick="location.reload()">Inicio</button>
+                        </a>
+                    </li>
+                    <li>
+                        <a>
+                            <button onclick="abrirModalCompactar()">Compactar</button>
+                        </a>
+                    </li>
+                    <li>
+                        <a>
+                            <button onclick="descompactarDados()">Descompactar</button>
                         </a>
                     </li>
                     <li>
@@ -284,8 +706,11 @@
             </h1>
             <div class="mesa">
                 <button onclick="abrirNovaComanda()">Abrir Nova Comanda</button>
-                <button onclick="compartilharNoWhatsApp()" style="background-color: #1ba14d; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
-                    📲 Convidar Amigos
+                <button class="btn-convidar" onclick="compartilharNoWhatsApp()">
+                    Convidar Amigos
+                </button>
+                <button onclick="abrirModalCompactar()">
+                    Compactar Dados
                 </button>
                 <div class="cervejamesa">
                     <img src="./assets/cerveja-removebg-preview.png">

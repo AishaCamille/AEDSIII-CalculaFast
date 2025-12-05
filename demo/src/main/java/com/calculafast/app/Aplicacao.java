@@ -5,7 +5,9 @@ import java.util.Map;
 
 import com.calculafast.casamentoDePadrao.KMP;
 import com.calculafast.casamentoDePadrao.BoyerMoore;
+import com.calculafast.compressao.BackupCompressao;
 import java.util.stream.Collectors;
+import java.io.File;
 
 import com.calculafast.dao.ComandaDAO;
 import com.calculafast.dao.ItemDAO;
@@ -684,6 +686,73 @@ get("/pessoas-comanda/:idPessoaComanda/consumo-total", (req, res) -> {
     } catch (Exception e) {
         res.status(500);
         return gson.toJson(Map.of("erro", "Erro ao calcular consumo: " + e.getMessage()));
+    }
+});
+
+// =====================================================
+// ENDPOINTS DE BACKUP E COMPRESSÃO
+// =====================================================
+BackupCompressao backupCompressao = new BackupCompressao("./dados");
+
+// Criar backup (substitui o anterior)
+post("/backup/compactar", (req, res) -> {
+    res.type("application/json");
+    try {
+        Map<String, Object> body = gson.fromJson(req.body(), Map.class);
+        String algoritmo = (String) body.get("algoritmo");
+        
+        int tipoCompressao = "huffman".equalsIgnoreCase(algoritmo) 
+            ? BackupCompressao.COMPRESSAO_HUFFMAN 
+            : BackupCompressao.COMPRESSAO_LZW;
+        
+        boolean sucesso = backupCompressao.criarBackup(tipoCompressao);
+        
+        if (sucesso) {
+            Map<String, Object> stats = backupCompressao.getUltimasEstatisticas();
+            res.status(201);
+            return gson.toJson(Map.of(
+                "mensagem", "Backup criado com sucesso!",
+                "estatisticas", stats
+            ));
+        } else {
+            res.status(400);
+            return gson.toJson(Map.of("erro", "Nenhum arquivo para backup"));
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao criar backup: " + e.getMessage()));
+    }
+});
+
+// Restaurar backup
+post("/backup/restaurar", (req, res) -> {
+    res.type("application/json");
+    try {
+        boolean sucesso = backupCompressao.restaurarBackup();
+        
+        if (sucesso) {
+            return gson.toJson(Map.of("mensagem", "Backup restaurado com sucesso!"));
+        } else {
+            res.status(400);
+            return gson.toJson(Map.of("erro", "Nenhum backup encontrado para restaurar"));
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao restaurar backup: " + e.getMessage()));
+    }
+});
+
+// Verificar se existe backup
+get("/backup/info", (req, res) -> {
+    res.type("application/json");
+    try {
+        Map<String, Object> info = backupCompressao.getInfoBackup();
+        return gson.toJson(info);
+    } catch (Exception e) {
+        res.status(500);
+        return gson.toJson(Map.of("erro", "Erro ao obter info do backup: " + e.getMessage()));
     }
 });
 
